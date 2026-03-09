@@ -1,15 +1,14 @@
 import { CartItem } from '../types';
-import { DELIVERY_FEE, TAX_RATE } from './constants';
 
 export function formatPrice(amount: number): string {
   return `Rs. ${amount.toLocaleString()}`;
 }
 
-export function calculateOrderTotals(cartItems: CartItem[]) {
+export function calculateOrderTotals(cartItems: CartItem[], deliveryFee = 0, taxRate = 0) {
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const tax = Math.round(subtotal * TAX_RATE);
-  const total = subtotal + tax + DELIVERY_FEE;
-  return { subtotal, tax, deliveryFee: DELIVERY_FEE, total };
+  const tax = Math.round(subtotal * taxRate);
+  const total = subtotal + tax + deliveryFee;
+  return { subtotal, tax, deliveryFee, total };
 }
 
 export function cn(...classes: (string | undefined | null | false)[]): string {

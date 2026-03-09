@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { X, Flame, Timer, Zap, ShoppingBag, ArrowRight, TrendingUp, Star, Users, Bell, ShieldCheck } from 'lucide-react';
 import { Product } from '@/types';
 import { useGetHotDealsQuery } from '@/store/apiSlice';
@@ -135,10 +136,12 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
                 `}
               >
                 <div className="relative h-40 md:h-64 w-full overflow-hidden">
-                    <img 
-                        src={deal.image} 
+                    <Image
+                        src={deal.image}
                         alt={deal.name}
-                        className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-transparent to-black/40"></div>
                     

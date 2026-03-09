@@ -33,6 +33,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       const userRaw = localStorage.getItem('broadway-user');
       if (userRaw) store.dispatch(userActions.hydrateUser(JSON.parse(userRaw) as User));
+
+      const guestPhone = localStorage.getItem('broadway-guest-phone');
+      if (guestPhone) store.dispatch(userActions.setGuestPhone(guestPhone));
     } catch {
       store.dispatch(locationActions.setHydrated());
     }
@@ -49,6 +52,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('broadway-user', JSON.stringify(state.user.user));
         } else {
           localStorage.removeItem('broadway-user');
+        }
+        if (state.user.guestPhone) {
+          localStorage.setItem('broadway-guest-phone', state.user.guestPhone);
+        } else {
+          localStorage.removeItem('broadway-guest-phone');
         }
       } catch { /* storage unavailable */ }
     });

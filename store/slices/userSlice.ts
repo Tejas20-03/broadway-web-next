@@ -3,10 +3,12 @@ import { User } from '../../types';
 
 interface UserState {
   user: User | null;
+  guestPhone: string;
 }
 
 const initialState: UserState = {
   user: null,
+  guestPhone: '',
 };
 
 const userSlice = createSlice({
@@ -21,6 +23,9 @@ const userSlice = createSlice({
     },
     hydrateUser(state, action: PayloadAction<User | null>) {
       state.user = action.payload;
+    },
+    setGuestPhone(state, action: PayloadAction<string>) {
+      state.guestPhone = action.payload;
     },
   },
 });

@@ -2,6 +2,7 @@
 
 
 import React from 'react';
+import Image from 'next/image';
 import { Check, Clock, MapPin, Phone, Home, ChevronRight, Copy, Printer, Bike, ChefHat, ShoppingBag, Receipt, Star } from 'lucide-react';
 import { CartItem, ProductOption } from '@/types';
 
@@ -154,8 +155,8 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                         <div className="space-y-6">
                             {cartItems.map((item, index) => (
                                 <div key={index} className="flex gap-4">
-                                    <div className="w-10 h-10 rounded-lg bg-[#0a0a0a] overflow-hidden shrink-0">
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                    <div className="w-10 h-10 rounded-lg bg-[#0a0a0a] overflow-hidden shrink-0 relative">
+                                        <Image src={item.image} alt={item.name} fill sizes="40px" className="object-cover" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-white truncate uppercase italic">

@@ -50,7 +50,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
 
                 {/* Direct Actions */}
                 <div className="space-y-4 mb-8">
-                    <a href="tel:111339339" className="group flex items-center gap-4 p-4 rounded-2xl bg-[#1a1a1a] border border-white/5 hover:border-yellow-500/50 hover:bg-[#222] transition-all">
+                    <a href="tel:021-111-339-339" className="group flex items-center gap-4 p-4 rounded-2xl bg-[#1a1a1a] border border-white/5 hover:border-yellow-500/50 hover:bg-[#222] transition-all">
                         <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-green-500 group-hover:bg-green-500 group-hover:text-black transition-colors">
                             <Phone size={18} />
                         </div>

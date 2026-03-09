@@ -53,6 +53,32 @@ export const fetchCities = async (): Promise<City[]> => {
 };
 
 // ---------------------------------------------------------------------------
+// Reverse-geocode: detect city + area from browser coordinates
+// ---------------------------------------------------------------------------
+export interface GeoCodeResult {
+  city: string;
+  area: string;
+  outletId: string;
+  outletName: string;
+}
+
+export const fetchGeoCodeArea = async (lat: number, lng: number): Promise<GeoCodeResult> => {
+  const data = await apiFetch(
+    `BroadwayAPI.aspx?Method=GetAreaFromGeoCode&GeoCode=${lat},${lng}`,
+  );
+  // ResponseType is a string: "1" = success, "0" = not found
+  if (String(data?.ResponseType) !== '1') {
+    throw new Error('Location not found');
+  }
+  return {
+    city: data.City ?? '',
+    area: data.Area ?? '',
+    outletId: data.OutletID ?? '',
+    outletName: data.OutletName ?? '',
+  };
+};
+
+// ---------------------------------------------------------------------------
 // Banners
 // ---------------------------------------------------------------------------
 export const fetchBanners = async (city = 'Karachi'): Promise<string[]> => {
@@ -112,14 +138,20 @@ export const fetchOutlets = async (city: string): Promise<Outlet[]> => {
 export const fetchPickupOutlets = async (city: string): Promise<Outlet[]> => {
   const data = await apiFetch(`BroadwayAPI.aspx?Method=GetOutletsV1&City=${encodeURIComponent(city)}`);
   const raw: any[] = Array.isArray(data) ? data : data?.Data || [];
-  return raw.map((o: any, i: number) => ({
-    id: String(o.ID ?? o.OutletID ?? o.id ?? i),
-    name: String(o.Name ?? o.OutletName ?? ''),
-    address: String(o.Address ?? o.address ?? o.OutletAddress ?? ''),
-    city: String(o.City ?? city),
-    mapLink: o.MapLink ?? o.maplink ?? o.GoogleMapLink ?? undefined,
-    phone: o.Phone ?? undefined,
-  }));
+  return raw.map((o: any, i: number) => {
+    // API returns plain strings like "Bahadurabad-KHI (Open at 01 PM)"
+    if (typeof o === 'string') {
+      return { id: String(i), name: o, address: '', city, mapLink: undefined, phone: undefined };
+    }
+    return {
+      id: String(o.ID ?? o.OutletID ?? o.id ?? i),
+      name: String(o.Name ?? o.OutletName ?? ''),
+      address: String(o.Address ?? o.address ?? o.OutletAddress ?? ''),
+      city: String(o.City ?? city),
+      mapLink: o.MapLink ?? o.maplink ?? o.GoogleMapLink ?? undefined,
+      phone: o.Phone ?? undefined,
+    };
+  });
 };
 
 // ---------------------------------------------------------------------------
@@ -150,13 +182,15 @@ export const fetchBlogPosts = async (): Promise<BlogPost[]> => {
 export const fetchMenuData = async (
   city = 'Karachi',
   area = 'Bahadurabad',
+  outlet?: string,
 ): Promise<{ categories: Category[]; products: Product[] }> => {
   try {
     let data: any;
     try {
-      data = await apiFetch(
-        `BroadwayAPI.aspx?method=getmenu&city=${encodeURIComponent(city)}&area=${encodeURIComponent(area)}&Platform=Web`,
-      );
+      const query = outlet
+        ? `BroadwayAPI.aspx?method=getmenu&city=${encodeURIComponent(city)}&OutletName=${encodeURIComponent(outlet)}&StudentID=&Platform=Web`
+        : `BroadwayAPI.aspx?method=getmenu&city=${encodeURIComponent(city)}&area=${encodeURIComponent(area)}&Platform=Web`;
+      data = await apiFetch(query);
     } catch {
       // API unreachable — use embedded static data as fallback
       console.warn('Menu API unavailable, using static data');
@@ -586,7 +620,7 @@ export const fetchSuggestiveItems = async (city: string, area: string): Promise<
 export const fetchProductOptions = async (
   itemId: string | number,
   city: string = 'Karachi',
-  area: string = 'Test Area',
+  area: string = '',
 ): Promise<Partial<Product>> => {
   try {
     const data = await apiFetch(

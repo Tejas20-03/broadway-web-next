@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { X, Frown, Meh, Smile, Laugh, Angry, Send } from 'lucide-react';
 
 interface FeedbackModalProps {
@@ -53,9 +54,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
             <form onSubmit={handleSubmit} className="space-y-8">
                 
                 <div className="flex flex-col items-center mb-6">
-                    <img 
-                        src="https://www.broadwaypizza.com.pk/assets/broadwayPizzaLogo.png" 
-                        alt="Logo" 
+                    <Image
+                        src="https://www.broadwaypizza.com.pk/assets/broadwayPizzaLogo.png"
+                        alt="Logo"
+                        width={140}
+                        height={48}
                         className="h-12 w-auto object-contain mb-2 opacity-80"
                     />
                     <p className="text-neutral-500 text-sm">We value your feedback to serve you better.</p>

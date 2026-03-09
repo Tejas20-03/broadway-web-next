@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { X, Minus, Plus, Check, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Product, ProductSize, ProductOption, ProductOptionGroup } from '@/types';
 import { useGetProductOptionsQuery } from '@/store/apiSlice';
@@ -66,9 +67,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   const unitPrice = basePrice + optionsPrice;
   const totalPrice = unitPrice * quantity;
 
-  // Left panel image: first selected option with an image, else product image
-  const leftImage =
-    Object.values(selectedOptions).flat().find(opt => opt.image)?.image ?? resolvedProduct.image;
+  const leftImage = resolvedProduct.image;
 
   // Badge labels for left panel
   const sizeLabel = selectedSize?.label ?? '';
@@ -117,7 +116,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
 
         {/* LEFT PANEL — product image */}
         <div className="hidden md:block relative w-[40%] bg-[#121212] shrink-0 group h-full">
-          <img src={leftImage} alt={resolvedProduct.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          <Image src={leftImage} alt={resolvedProduct.name} fill sizes="40vw" className="object-cover transition-transform duration-700 group-hover:scale-110" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/30"></div>
           <button onClick={onClose} className="absolute top-4 left-4 bg-black/40 hover:bg-black/80 text-white p-3 rounded-full backdrop-blur transition-all border border-white/10 z-20">
             <X size={24} />
@@ -138,7 +137,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
 
             {/* Mobile image */}
             <div className="md:hidden relative w-full h-72 bg-[#121212] shrink-0">
-              <img src={leftImage} alt={resolvedProduct.name} className="w-full h-full object-cover" />
+              <Image src={leftImage} alt={resolvedProduct.name} fill sizes="100vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/30"></div>
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="flex gap-2 mb-2 flex-wrap">
@@ -186,7 +185,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
                           >
                             <div className={`relative rounded-full border-2 overflow-hidden flex items-center justify-center transition-all duration-300 ${active ? 'w-12 h-12 md:w-16 md:h-16 border-yellow-500 bg-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'w-10 h-10 md:w-14 md:h-14 border-neutral-700 bg-neutral-900'}`}>
                               {size.image
-                                ? <img src={size.image} alt={size.label} className={`w-full h-full object-contain p-1.5 transition-opacity ${active ? 'opacity-100' : 'opacity-40'}`} />
+                                ? <Image src={size.image} alt={size.label} fill sizes="64px" className={`object-contain p-1.5 transition-opacity ${active ? 'opacity-100' : 'opacity-40'}`} />
                                 : <span className={`font-black text-sm md:text-base ${active ? 'text-white' : 'text-neutral-600'}`}>{size.label[0] ?? '?'}</span>
                               }
                             </div>
@@ -228,7 +227,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
                                 className={`relative aspect-square rounded-2xl border-2 cursor-pointer overflow-hidden group transition-all duration-300 ${active ? 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'border-neutral-800 hover:border-neutral-600'}`}
                               >
                                 <div className="absolute inset-0 bg-[#121212]">
-                                  <img src={option.image} alt={option.name} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                                  <Image src={option.image!} alt={option.name} fill sizes="(max-width: 768px) 33vw, 20vw" className="object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
                                   <div className={`absolute inset-0 ${active ? 'bg-yellow-500/10' : 'bg-black/20'}`}></div>
                                 </div>
                                 {active && (

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useGetBannersQuery } from '@/store/apiSlice';
 import { useLocation } from '@/context/LocationContext';
 
@@ -32,10 +33,13 @@ export const Hero: React.FC = () => {
               index === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
-            <img 
-              src={src} 
-              alt={`Banner ${index + 1}`} 
-              className="w-full h-full object-cover object-center" 
+            <Image
+              src={src}
+              alt={`Banner ${index + 1}`}
+              fill
+              className="object-cover object-center"
+              priority={index === 0}
+              sizes="100vw"
             />
             {/* Subtle Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 dark:to-black/50"></div>

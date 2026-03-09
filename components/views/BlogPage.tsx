@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React from 'react';
+import Image from 'next/image';
 import { X, ArrowRight, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
 import { useGetBlogPostsQuery } from '@/store/apiSlice';
 import { BlogPost } from '@/types';
@@ -72,10 +73,13 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
             {featured && (
               <div className="md:col-span-2 md:row-span-2 group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212]">
                 {featured.image && (
-                  <img
+                  <Image
                     src={featured.image}
                     alt={featured.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-40"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 66vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-40"
+                    priority
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
@@ -107,10 +111,12 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
               <div key={post.id} className="group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212] flex flex-col">
                 <div className="h-1/2 overflow-hidden relative">
                   {post.image && (
-                    <img
+                    <Image
                       src={post.image}
                       alt={post.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                   )}
                   <div className="absolute top-3 right-3">

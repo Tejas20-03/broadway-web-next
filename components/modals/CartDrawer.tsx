@@ -2,6 +2,7 @@
 
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { X, Minus, Plus, ShoppingBag, ArrowRight, Trash2, TicketPercent, PlusCircle, CheckCircle2, ChevronRight } from 'lucide-react';
 import { CartItem, ProductOption, Product } from '@/types';
 import { useLocation } from '@/context/LocationContext';
@@ -33,7 +34,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
   const [voucherError, setVoucherError] = useState(false);
   const { data: suggestiveItems = [] } = useGetSuggestiveItemsQuery(
-    { city: location.city || 'Karachi', area: location.area || 'Bahadurabad' },
+    { city: location.city, area: location.area },
     { skip: !isOpen },
   );
 
@@ -42,8 +43,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     return cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }, [cartItems]);
   
-  const tax = Math.round(subtotal * 0.16);
-  const deliveryFee = 150;
+  const tax = Math.round(subtotal * location.deliveryTax);
+  const deliveryFee = location.deliveryFee;
   
   // Voucher Logic (Mock)
   const discount = appliedVoucher ? 250 : 0;
@@ -126,11 +127,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     return (
                         <div key={item.cartId} className="flex gap-4 group">
                             <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 relative">
-                                <img 
-                                    src={item.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591'} 
-                                    alt={item.name} 
-                                    className="w-full h-full object-cover" 
-                                    onError={(e) => (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1513104890138-7c749659a591'}
+                                <Image
+                                    src={item.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591'}
+                                    alt={item.name}
+                                    fill
+                                    sizes="80px"
+                                    className="object-cover"
                                 />
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
@@ -182,11 +184,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                             onClick={() => handleQuickAdd(item)}
                           >
                               <div className="h-24 w-full relative">
-                                  <img 
-                                    src={item.image} 
-                                    alt={item.name} 
-                                    className="w-full h-full object-cover" 
-                                    onError={(e) => (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1573140247632-f84660f67126'}
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    fill
+                                    sizes="144px"
+                                    className="object-cover"
                                   />
                                   <div className="absolute top-1 right-1 bg-black/60 backdrop-blur rounded-full p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                       <Plus size={14} strokeWidth={3} />

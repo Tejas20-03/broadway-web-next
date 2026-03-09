@@ -128,9 +128,9 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           <div className="px-6 py-4">
             <h4 className="text-neutral-400 dark:text-neutral-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Social Network</h4>
             <div className="grid grid-cols-3 gap-2">
-                <SocialPill icon={<Facebook size={16} />} label="Facebook" href="https://facebook.com" />
-                <SocialPill icon={<Instagram size={16} />} label="Instagram" href="https://instagram.com" />
-                <SocialPill icon={<MessageCircle size={16} />} label="WhatsApp" href="https://wa.me/9221111339339" />
+                <SocialPill icon={<Facebook size={16} />} label="Facebook" href="https://www.facebook.com/Broadwaypizzaa" />
+                <SocialPill icon={<Instagram size={16} />} label="Instagram" href="https://www.instagram.com/broadwaypizzaa/?theme=dark" />
+                <SocialPill icon={<MessageCircle size={16} />} label="WhatsApp" href="https://api.whatsapp.com/send/?phone=%2B9221111339339&text&type=phone_number&app_absent=0" />
             </div>
           </div>
 

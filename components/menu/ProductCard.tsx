@@ -2,6 +2,7 @@
 
 
 import React from 'react';
+import Image from 'next/image';
 import { Plus, Star, Flame, Sparkles, TrendingUp, Zap, Percent } from 'lucide-react';
 import { Product } from '@/types';
 
@@ -56,10 +57,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
       {/* Image Section - Edge to Edge on Mobile */}
       <div className="relative h-40 md:h-56 w-full overflow-hidden p-0 md:p-3 md:pb-0">
         <div className="w-full h-full md:rounded-[1.5rem] overflow-hidden relative bg-[#1a1a1a]">
-            <img 
-              src={imageUrl} 
+            <Image
+              src={imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover transition-transform duration-1000 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent opacity-60"></div>
             <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5 z-10">

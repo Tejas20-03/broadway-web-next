@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { X, MapPin, Search, Compass, ArrowUpRight, Map as MapIcon, Loader2, Building2, Info } from 'lucide-react';
 import { useOutlets } from '@/hooks/useAreas';
 import { useGetCitiesQuery } from '@/store/apiSlice';
@@ -12,14 +13,14 @@ interface LocationsPageProps {
 
 export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCity, setSelectedCity] = useState('Karachi');
-  const { data: cities = [] } = useGetCitiesQuery(undefined, { skip: !isOpen });
+  const [selectedCity, setSelectedCity] = useState('');
+  const { data: cities = [], isLoading: citiesLoading } = useGetCitiesQuery(undefined, { skip: !isOpen });
 
   useEffect(() => {
-    if (cities.length > 0 && !cities.find(c => c.name === selectedCity)) {
+    if (cities.length > 0 && !selectedCity) {
       setSelectedCity(cities[0].name);
     }
-  }, [cities]);
+  }, [cities, selectedCity]);
 
   const { outlets, isLoading } = useOutlets(isOpen ? selectedCity : '');
 
@@ -56,23 +57,9 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
         <div className="max-w-7xl mx-auto px-6 pb-6 space-y-5">
         {/* City Cards */}
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-          {cities.length === 0
-            ? ['Karachi', 'Lahore', 'Islamabad'].map(city => (
-                <button
-                  key={city}
-                  onClick={() => setSelectedCity(city)}
-                  className={`relative shrink-0 w-28 h-16 rounded-2xl overflow-hidden border-2 transition-all duration-300
-                    ${selectedCity === city
-                      ? 'border-yellow-500 shadow-lg shadow-yellow-500/20'
-                      : 'border-white/10 opacity-60 hover:opacity-100'}`}
-                >
-                  <div className="absolute inset-0 bg-neutral-800" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20" />
-                  <span className="absolute bottom-2 left-0 right-0 text-center text-[10px] font-black uppercase tracking-widest text-white">{city}</span>
-                  {selectedCity === city && (
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-yellow-500" />
-                  )}
-                </button>
+          {citiesLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="shrink-0 w-28 h-16 rounded-2xl bg-white/5 animate-pulse" />
               ))
             : cities.map(city => (
                 <button
@@ -84,8 +71,7 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
                       : 'border-white/10 opacity-60 hover:opacity-90 hover:scale-[1.02]'}`}
                 >
                   {city.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={city.imageUrl} alt={city.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <Image src={city.imageUrl} alt={city.name} fill sizes="120px" className="object-cover" />
                   )}
                   <div className={`absolute inset-0 bg-gradient-to-t transition-all duration-300 ${selectedCity === city.name ? 'from-black/70 to-black/10' : 'from-black/80 to-black/40'}`} />
                   <span className={`absolute bottom-2 left-0 right-0 text-center text-[10px] font-black uppercase tracking-widest transition-colors ${selectedCity === city.name ? 'text-yellow-400' : 'text-white'}`}>

@@ -7,15 +7,17 @@ import type { LocationState, OrderType } from '../types';
 
 export function useLocation() {
   const dispatch = useAppDispatch();
-  const { data: location, isHydrated } = useAppSelector((state) => state.location);
+  const { data: location, isHydrated, hasSetLocation } = useAppSelector((state) => state.location);
 
   return {
     location,
     isHydrated,
+    hasSetLocation,
     setOrderType: useCallback((type: OrderType) => dispatch(locationActions.setOrderType(type)), [dispatch]),
     setCity: useCallback((city: string) => dispatch(locationActions.setCity(city)), [dispatch]),
     setArea: useCallback((area: string) => dispatch(locationActions.setArea(area)), [dispatch]),
     setOutlet: useCallback((name: string, id: string) => dispatch(locationActions.setOutlet({ name, id })), [dispatch]),
+    setDeliveryFees: useCallback((fee: number, tax: number) => dispatch(locationActions.setDeliveryFees({ fee, tax })), [dispatch]),
     resetLocation: useCallback(() => dispatch(locationActions.resetLocation()), [dispatch]),
   };
 }

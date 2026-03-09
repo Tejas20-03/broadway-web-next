@@ -21,6 +21,7 @@ import {
   checkNumber,
   verifyCode,
   placeOrder,
+  fetchGeoCodeArea,
   type City,
   type HotDeal,
   type BirthdayDeal,
@@ -29,6 +30,7 @@ import {
   type PendingOrder,
   type SuggestiveItem,
   type OrderPayload,
+  type GeoCodeResult,
 } from '../services/api';
 
 type CustomError = { status: 'CUSTOM_ERROR'; error: string };
@@ -42,9 +44,9 @@ export const broadwayApi = createApi({
   tagTypes: ['Orders', 'Customer', 'Wallet'],
   endpoints: (builder) => ({
     // ── Queries ─────────────────────────────────────────────────────────────
-    getMenu: builder.query<{ categories: Category[]; products: Product[] }, { city: string; area: string }>({
-      queryFn: async ({ city, area }) => {
-        try { return { data: await fetchMenuData(city, area) }; } catch (e) { return err(e); }
+    getMenu: builder.query<{ categories: Category[]; products: Product[] }, { city: string; area: string; outlet?: string }>({
+      queryFn: async ({ city, area, outlet }) => {
+        try { return { data: await fetchMenuData(city, area, outlet) }; } catch (e) { return err(e); }
       },
       keepUnusedDataFor: 300,
     }),
@@ -151,6 +153,13 @@ export const broadwayApi = createApi({
       keepUnusedDataFor: 120,
     }),
 
+    getGeoCodeArea: builder.query<GeoCodeResult, { lat: number; lng: number }>({
+      queryFn: async ({ lat, lng }) => {
+        try { return { data: await fetchGeoCodeArea(lat, lng) }; } catch (e) { return err(e); }
+      },
+      keepUnusedDataFor: 60,
+    }),
+
     // ── Mutations ────────────────────────────────────────────────────────────
     checkNumber: builder.mutation<{ success: boolean; isNewCustomer?: boolean; message?: string }, string>({
       queryFn: async (phone) => {
@@ -213,4 +222,5 @@ export const {
   usePlaceOrderMutation,
   useUpdateCustomerInfoMutation,
   useDeleteAccountMutation,
+  useLazyGetGeoCodeAreaQuery,
 } = broadwayApi;

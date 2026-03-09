@@ -7,6 +7,7 @@ export interface LastOrder {
   tax: number;
   deliveryFee: number;
   total: number;
+  orderAddress?: string;
 }
 
 interface UiState {

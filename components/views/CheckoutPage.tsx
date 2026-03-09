@@ -1,36 +1,40 @@
 'use client'
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, CreditCard, Banknote, User, Phone, Mail, ChevronRight, ShieldCheck, Truck, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { CartItem } from '@/types';
 import { useUser } from '@/context/UserContext';
 import { useLocation } from '@/context/LocationContext';
 import { usePlaceOrderMutation } from '@/store/apiSlice';
+import { useAppSelector } from '@/store';
 
 interface CheckoutPageProps {
   isOpen: boolean;
   onBack: () => void;
   cartItems: CartItem[];
   subtotal: number;
-  onPlaceOrder: () => void;
+  onPlaceOrder: (orderAddress?: string) => void;
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cartItems, subtotal, onPlaceOrder }) => {
   const { user } = useUser();
   const { location } = useLocation();
+  const guestPhone = useAppSelector(state => state.user.guestPhone);
 
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
   const [deliveryTime, setDeliveryTime] = useState<'asap' | 'schedule'>('asap');
   const [name, setName] = useState(user?.name ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? guestPhone ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [address, setAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [orderResult, setOrderResult] = useState<{ success: boolean; message: string } | null>(null);
   const [submitOrder, { isLoading: isSubmitting }] = usePlaceOrderMutation();
 
-  const tax = Math.round(subtotal * 0.16);
-  const deliveryFee = 150;
+  const deliveryFee = location.deliveryFee;
+  const taxRate = location.deliveryTax;
+  const tax = Math.round(subtotal * taxRate);
   const total = subtotal + tax + deliveryFee;
 
   const areaDisplay = location.orderType === 'delivery'
@@ -70,8 +74,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
         platform: 'Web',
       }).unwrap();
       if (result.success) {
+        const fullAddress = [address, landmark, location.area, location.city].filter(Boolean).join(', ');
         setOrderResult({ success: true, message: `Order placed! ID: ${result.orderId ?? 'N/A'}` });
-        setTimeout(() => onPlaceOrder(), 2000);
+        setTimeout(() => onPlaceOrder(fullAddress), 2000);
       } else {
         setOrderResult({ success: false, message: result.message ?? 'Order failed. Please try again.' });
       }
@@ -220,8 +225,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                     <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar mb-6 pr-2">
                         {cartItems.map(item => (
                             <div key={item.cartId} className="flex gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-[#0a0a0a] overflow-hidden border border-white/5 shrink-0">
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                <div className="w-12 h-12 rounded-lg bg-[#0a0a0a] overflow-hidden border border-white/5 shrink-0 relative">
+                                    <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start">
@@ -241,12 +246,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                             <span>Rs. {subtotal}</span>
                         </div>
                         <div className="flex justify-between text-neutral-400 text-xs">
-                            <span>GST (16%)</span>
+                            <span>GST ({Math.round(taxRate * 100)}%)</span>
                             <span>Rs. {tax}</span>
                         </div>
                         <div className="flex justify-between text-neutral-400 text-xs">
                             <span>Delivery Fee</span>
-                            <span>Rs. {deliveryFee}</span>
+                            <span>{deliveryFee > 0 ? `Rs. ${deliveryFee}` : 'Free'}</span>
                         </div>
                     </div>
 

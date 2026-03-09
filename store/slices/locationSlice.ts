@@ -7,16 +7,20 @@ const DEFAULT_LOCATION: LocationState = {
   area: 'Bahadurabad',
   outlet: '',
   outletId: '',
+  deliveryFee: 0,
+  deliveryTax: 0,
 };
 
 interface LocationSliceState {
   data: LocationState;
   isHydrated: boolean;
+  hasSetLocation: boolean;
 }
 
 const initialState: LocationSliceState = {
   data: DEFAULT_LOCATION,
   isHydrated: false,
+  hasSetLocation: false,
 };
 
 const locationSlice = createSlice({
@@ -31,17 +35,25 @@ const locationSlice = createSlice({
     },
     setArea(state, action: PayloadAction<string>) {
       state.data.area = action.payload;
+      state.hasSetLocation = true;
     },
     setOutlet(state, action: PayloadAction<{ name: string; id: string }>) {
       state.data.outlet = action.payload.name;
       state.data.outletId = action.payload.id;
+      state.hasSetLocation = true;
+    },
+    setDeliveryFees(state, action: PayloadAction<{ fee: number; tax: number }>) {
+      state.data.deliveryFee = action.payload.fee;
+      state.data.deliveryTax = action.payload.tax;
     },
     resetLocation(state) {
       state.data = DEFAULT_LOCATION;
+      state.hasSetLocation = false;
     },
     hydrateLocation(state, action: PayloadAction<LocationState>) {
-      state.data = action.payload;
+      state.data = { ...DEFAULT_LOCATION, ...action.payload };
       state.isHydrated = true;
+      state.hasSetLocation = true;
     },
     setHydrated(state) {
       state.isHydrated = true;

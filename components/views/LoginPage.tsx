@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { X, ArrowRight, ShieldCheck, Lock, Smartphone, ChevronLeft, Loader2, Edit2, User, AlertCircle } from 'lucide-react';
 import { useCheckNumberMutation, useVerifyCodeMutation } from '@/store/apiSlice';
 import { useUser } from '@/context/UserContext';
@@ -141,10 +142,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                 
                 {/* Brand Header */}
                 <div className="flex flex-col items-center justify-center mt-4 mb-6">
-                    <img 
-                        src="https://www.broadwaypizza.com.pk/assets/broadwayPizzaLogo.png" 
-                        alt="Logo" 
-                        className="h-16 w-auto object-contain mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" 
+                    <Image
+                        src="https://www.broadwaypizza.com.pk/assets/broadwayPizzaLogo.png"
+                        alt="Logo"
+                        width={160}
+                        height={64}
+                        className="h-16 w-auto object-contain mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                        priority
                     />
                     <h2 className="text-2xl font-black text-white uppercase tracking-tight text-center">
                         Unlock Flavor

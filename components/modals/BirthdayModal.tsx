@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { X, Gift, Calendar, Users, MapPin, Check, Phone, Cake, Music, Sparkles } from 'lucide-react';
 import { useGetBirthdayDealsQuery } from '@/store/apiSlice';
 
@@ -141,10 +142,12 @@ export const BirthdayModal: React.FC<BirthdayModalProps> = ({ isOpen, onClose })
                                         `}
                                     >
                                         <div className="relative h-32 md:h-40 w-full overflow-hidden">
-                                            <img 
-                                                src={deal.image} 
+                                            <Image
+                                                src={deal.image}
                                                 alt={deal.name}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                fill
+                                                sizes="(max-width: 768px) 100vw, 50vw"
+                                                className="object-cover transition-transform duration-700 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent"></div>
                                             <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">

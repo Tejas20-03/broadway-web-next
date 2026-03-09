@@ -33,7 +33,7 @@ export interface Product {
   isNew?: boolean;
   rating?: number;
   serves?: number;
-  
+  ItemImage?: string;
   // Strict API Structure
   sizes?: ProductSize[];
   optionGroups?: ProductOptionGroup[];
@@ -82,6 +82,8 @@ export interface LocationState {
   area: string;       // delivery area name
   outlet: string;     // pickup outlet name
   outletId: string;
+  deliveryFee: number;
+  deliveryTax: number; // as decimal, e.g. 0.16 for 16%
 }
 
 // --- User / Auth ---

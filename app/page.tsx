@@ -101,9 +101,20 @@ export default function Home() {
     lastOrder, setLastOrder,
   } = useApp();
 
-  // Re-fetches automatically when city or area changes
-  const { location } = useLocation();
-  const { categories, products, isLoading } = useMenu(location.city, location.area);
+  // Re-fetches automatically when city or area/outlet changes
+  const { location, isHydrated, hasSetLocation } = useLocation();
+  const { categories, products, isLoading } = useMenu(
+    location.city,
+    location.area,
+    location.orderType === 'pickup' ? location.outlet : undefined,
+  );
+
+  // Auto-open location modal for first-time visitors
+  useEffect(() => {
+    if (isHydrated && !hasSetLocation) {
+      openLocation();
+    }
+  }, [isHydrated, hasSetLocation, openLocation]);
 
   const { user } = useUser();
   const [activeCategory, setActiveCategory] = useState('');
@@ -189,12 +200,12 @@ export default function Home() {
     }
   }, []);
 
-  const handlePlaceOrder = useCallback(() => {
-    const totals = calculateOrderTotals(cartItems);
-    setLastOrder({ items: [...cartItems], ...totals });
+  const handlePlaceOrder = useCallback((orderAddress?: string) => {
+    const totals = calculateOrderTotals(cartItems, location.deliveryFee, location.deliveryTax);
+    setLastOrder({ items: [...cartItems], ...totals, orderAddress });
     clearCart();
     confirmOrder();
-  }, [cartItems, clearCart, confirmOrder, setLastOrder]);
+  }, [cartItems, location.deliveryFee, location.deliveryTax, clearCart, confirmOrder, setLastOrder]);
 
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 

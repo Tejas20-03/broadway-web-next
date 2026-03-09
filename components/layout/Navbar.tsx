@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Menu, MapPin, ChevronDown, Flame } from 'lucide-react';
 import { useLocation } from '@/context/LocationContext';
@@ -34,14 +35,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Left: Logo Only */}
           <div className="flex items-center gap-3 md:gap-6 shrink-0">
             <div className="flex-shrink-0 flex items-center md:pl-2">
-              <img 
-                src="https://www.broadwaypizza.com.pk/assets/broadwayPizzaLogo.png" 
-                alt="Broadway Pizza" 
+              <Image
+                src="https://www.broadwaypizza.com.pk/assets/broadwayPizzaLogo.png"
+                alt="Broadway Pizza"
+                width={200}
+                height={64}
                 className="h-10 sm:h-12 md:h-16 w-auto object-contain transition-transform hover:scale-105"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://play-lh.googleusercontent.com/5J3I7k_pQWJtQ9kK6j_5y5K4nZ8k5y5K4nZ8k5y5K4nZ8';
-                  (e.target as HTMLImageElement).onerror = null; 
-                }}
+                priority
               />
             </div>
           </div>

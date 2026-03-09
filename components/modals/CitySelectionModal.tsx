@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Search, Check, MapPin, X, Loader2 } from 'lucide-react';
 import { useGetCitiesQuery } from '@/store/apiSlice';
 import type { City } from '@/services/api';
@@ -85,13 +86,14 @@ export const CitySelectionModal: React.FC<CitySelectionModalProps> = ({ isOpen, 
                             >
                                 <div className="flex items-center gap-3">
                                     {/* City Image */}
-                                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-neutral-900">
+                                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-neutral-900 relative">
                                         {city.imageUrl ? (
-                                            <img
+                                            <Image
                                                 src={city.imageUrl}
                                                 alt={city.name}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                fill
+                                                sizes="40px"
+                                                className="object-cover"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
