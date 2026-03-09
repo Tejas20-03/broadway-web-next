@@ -294,6 +294,8 @@ export default function Home() {
         tax={lastOrder?.tax ?? 0}
         deliveryFee={lastOrder?.deliveryFee ?? 0}
         total={lastOrder?.total ?? 0}
+        orderAddress={lastOrder?.orderAddress}
+        orderType={location.orderType}
       />
 
       <LoginPage isOpen={isLoginOpen} onClose={closeLogin} />

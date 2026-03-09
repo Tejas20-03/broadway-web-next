@@ -15,10 +15,12 @@ interface OrderConfirmationPageProps {
   deliveryFee: number;
   total: number;
   orderId?: string;
+  orderAddress?: string;
+  orderType?: string;
 }
 
 export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ 
-  isOpen, onClose, cartItems, subtotal, tax, deliveryFee, total, orderId = "5438180" 
+  isOpen, onClose, cartItems, subtotal, tax, deliveryFee, total, orderId = "5438180", orderAddress, orderType
 }) => {
   if (!isOpen) return null;
 
@@ -118,15 +120,27 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                 <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 md:p-8">
                      <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-6">Order Dispatch</h3>
                      <div className="space-y-6">
-                        <div className="flex items-start gap-4">
+                        {orderType === 'pickup' ? (
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] flex items-center justify-center text-yellow-500 shrink-0">
+                                <ShoppingBag size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Pickup From</p>
+                                <p className="text-white font-medium text-sm">{orderAddress || 'Your selected outlet'}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] flex items-center justify-center text-yellow-500 shrink-0">
                                 <MapPin size={20} />
                             </div>
                             <div>
                                 <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Destination</p>
-                                <p className="text-white font-medium text-sm">Bahadurabad, Block 3, House 45-B, Karachi</p>
+                                <p className="text-white font-medium text-sm">{orderAddress || '—'}</p>
                             </div>
-                        </div>
+                          </div>
+                        )}
                      </div>
                 </div>
 

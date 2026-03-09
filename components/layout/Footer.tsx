@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Facebook, Instagram, Twitter, Youtube, MapPin, Phone } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Youtube, Phone } from 'lucide-react';
 import { MessageCircle } from 'lucide-react';
 
 interface FooterProps {
@@ -94,11 +94,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenContact, onOpenFeedback })
                     <SocialIcon href="https://api.whatsapp.com/send/?phone=%2B9221111339339&text&type=phone_number&app_absent=0" icon={<MessageCircle size={18} />} />
                     <SocialIcon href="tel:021-111-339-339" icon={<Phone size={18} />} />
                 </div>
-                <div className="mt-6 flex items-start gap-2 text-neutral-500">
-                    <MapPin size={16} className="mt-0.5 shrink-0" />
-                    <span className="text-xs">
-                        Head Office: 123 Pizza Street, Food District, Karachi.
-                    </span>
+                <div className="mt-6">
+                    <p className="text-xs text-neutral-500 italic leading-relaxed">
+                        &ldquo;Wherever your craving calls — we&apos;re already there, one perfect slice away.&rdquo;
+                    </p>
                 </div>
             </div>
         </div>
