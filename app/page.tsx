@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // Layout
 import { Navbar } from '../components/layout/Navbar';
@@ -24,21 +25,19 @@ import { BirthdayModal } from '../components/modals/BirthdayModal';
 import { FeedbackModal } from '../components/modals/FeedbackModal';
 import { SpinWheelModal } from '../components/modals/SpinWheelModal';
 
-// Full-screen views
-import { CheckoutPage } from '../components/views/CheckoutPage';
-import { OrderConfirmationPage } from '../components/views/OrderConfirmationPage';
+// Full-screen overlay pages (remain)
 import { LoginPage } from '../components/views/LoginPage';
-import { AccountPage } from '../components/views/AccountPage';
 
 // State and Data
 import { useCart } from '../context/CartContext';
 import { useApp } from '../context/AppContext';
 import { useLocation } from '../context/LocationContext';
 import { useUser } from '../context/UserContext';
+import { useAppDispatch } from '../store';
+import { uiActions } from '../store/slices/uiSlice';
 import { useGetPendingOrdersQuery } from '../store/apiSlice';
 import type { PendingOrder } from '../services/api';
 import { useMenu } from '../hooks/useMenu';
-import { calculateOrderTotals } from '../lib/utils';
 import { Product } from '../types';
 
 // SEO helper (client-side only)
@@ -90,15 +89,12 @@ export default function Home() {
     toggleTheme,
     isMenuOpen, openMenu, closeMenu,
     isLocationOpen, openLocation, closeLocation,
-    isCheckoutOpen, openCheckout, closeCheckout,
-    isOrderConfirmed, confirmOrder, closeOrderConfirmation,
     isLoginOpen, openLogin, closeLogin,
     isContactOpen, openContact, closeContact,
     isFranchiseOpen, openFranchise, closeFranchise,
     isBirthdayOpen, openBirthday, closeBirthday,
     isFeedbackOpen, openFeedback, closeFeedback,
     isSpinOpen, openSpin, closeSpin,
-    lastOrder, setLastOrder,
   } = useApp();
 
   // Re-fetches automatically when city or area/outlet changes
@@ -117,11 +113,11 @@ export default function Home() {
   }, [isHydrated, hasSetLocation, openLocation]);
 
   const { user } = useUser();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [activeCategory, setActiveCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [trackDismissed, setTrackDismissed] = useState(false);
-  const [checkoutVoucher, setCheckoutVoucher] = useState<{ code: string; amount: number }>({ code: '', amount: 0 });
 
   // RTK Query: auto-fetches and refetches when user logs in/out
   const { data: pendingOrders = [] } = useGetPendingOrdersQuery(
@@ -201,45 +197,6 @@ export default function Home() {
     }
   }, []);
 
-  const handlePlaceOrder = useCallback((orderAddress?: string, orderId?: string, encOrderId?: string) => {
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const normalizedTaxRate = location.deliveryTax >= 1 ? location.deliveryTax / 100 : location.deliveryTax;
-    const finalDeliveryFee = location.orderType === 'pickup' ? 0 : location.deliveryFee;
-    const effectiveSubtotal = Math.max(0, subtotal - checkoutVoucher.amount);
-    const taxBreakdown = Math.round(effectiveSubtotal * normalizedTaxRate);
-    const preTaxSubtotal = effectiveSubtotal - taxBreakdown;
-    const total = effectiveSubtotal + finalDeliveryFee;
-    setLastOrder({
-      items: [...cartItems],
-      subtotal,
-      taxBreakdown,
-      preTaxSubtotal,
-      deliveryFee: finalDeliveryFee,
-      total,
-      discountAmount: checkoutVoucher.amount,
-      voucher: checkoutVoucher.code,
-      orderAddress,
-      orderId,
-      encOrderId,
-      orderType: location.orderType,
-    });
-    clearCart();
-    setCheckoutVoucher({ code: '', amount: 0 }); // reset voucher after order
-    confirmOrder();
-  }, [cartItems, checkoutVoucher, location, clearCart, confirmOrder, setLastOrder]);
-
-  const handleViewOrder = useCallback((orderId: string, encOrderId: string) => {
-    setLastOrder({
-      items: [], subtotal: 0, taxBreakdown: 0, preTaxSubtotal: 0,
-      deliveryFee: 0, total: 0,
-      orderId, encOrderId,
-      orderType: location.orderType,
-    });
-    confirmOrder();
-  }, [setLastOrder, confirmOrder, location.orderType]);
-
-  const cartSubtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0a0a0a] transition-colors">
@@ -262,7 +219,7 @@ export default function Home() {
         isDark={isDark}
         toggleTheme={toggleTheme}
         onOpenLogin={openLogin}
-        onOpenAccount={() => user ? setIsAccountOpen(true) : openLogin()}
+        onOpenAccount={() => user ? router.push('/account') : openLogin()}
         onOpenSpin={openSpin}
       />
 
@@ -275,7 +232,7 @@ export default function Home() {
         onOpenFeedback={openFeedback}
         isDark={isDark}
         toggleTheme={toggleTheme}
-        onOpenAccount={() => setIsAccountOpen(true)}
+        onOpenAccount={() => user ? router.push('/account') : openLogin()}
         onOpenLogin={openLogin}
       />
 
@@ -298,7 +255,11 @@ export default function Home() {
         onClose={closeCart}
         cartItems={cartItems}
         updateQuantity={updateQuantity}
-        onCheckout={(code, amount) => { setCheckoutVoucher({ code, amount }); closeCart(); openCheckout(); }}
+        onCheckout={(code, amount) => {
+          dispatch(uiActions.setCheckoutVoucher({ code, amount }));
+          closeCart();
+          router.push('/checkout');
+        }}
         products={products}
         onAddToCart={addToCart}
       />
@@ -309,27 +270,7 @@ export default function Home() {
       <FeedbackModal isOpen={isFeedbackOpen} onClose={closeFeedback} />
       <SpinWheelModal isOpen={isSpinOpen} onClose={closeSpin} />
 
-      <CheckoutPage
-        isOpen={isCheckoutOpen}
-        onBack={closeCheckout}
-        cartItems={cartItems}
-        subtotal={cartSubtotal}
-        discountAmount={checkoutVoucher.amount}
-        voucher={checkoutVoucher.code}
-        onPlaceOrder={handlePlaceOrder}
-      />
-
-      <OrderConfirmationPage
-        isOpen={isOrderConfirmed}
-        onClose={closeOrderConfirmation}
-        orderId={lastOrder?.orderId}
-        encOrderId={lastOrder?.encOrderId}
-        orderAddress={lastOrder?.orderAddress}
-        orderType={lastOrder?.orderType ?? location.orderType}
-      />
-
       <LoginPage isOpen={isLoginOpen} onClose={closeLogin} />
-      <AccountPage isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} onViewOrder={handleViewOrder} />
 
       <div className="flex-1 md:pl-24 transition-all duration-300 flex flex-col min-h-screen">
 
@@ -349,7 +290,7 @@ export default function Home() {
               </button>
               {/* Track pill */}
               <button
-                onClick={() => {/* tracking will use EncOrderID once API is shared */}}
+                onClick={() => router.push(`/order/${encodeURIComponent(latest.encId)}`)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl font-bold text-sm text-black transition-transform active:scale-95 ${isConfirmed ? 'bg-green-500' : 'bg-yellow-400'}`}
               >
                 <span className="w-2 h-2 rounded-full bg-black/30 animate-pulse shrink-0" />

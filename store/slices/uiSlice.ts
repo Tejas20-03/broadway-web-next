@@ -25,6 +25,7 @@ interface UiState {
   isCheckoutOpen: boolean;
   isOrderConfirmed: boolean;
   lastOrder: LastOrder | null;
+  checkoutVoucher: { code: string; amount: number };
   isLoginOpen: boolean;
   isContactOpen: boolean;
   isFranchiseOpen: boolean;
@@ -40,6 +41,7 @@ const initialState: UiState = {
   isCheckoutOpen: false,
   isOrderConfirmed: false,
   lastOrder: null,
+  checkoutVoucher: { code: '', amount: 0 },
   isLoginOpen: false,
   isContactOpen: false,
   isFranchiseOpen: false,
@@ -74,6 +76,9 @@ const uiSlice = createSlice({
     },
     setLastOrder(state, action: PayloadAction<LastOrder | null>) {
       state.lastOrder = action.payload;
+    },
+    setCheckoutVoucher(state, action: PayloadAction<{ code: string; amount: number }>) {
+      state.checkoutVoucher = action.payload;
     },
     openLogin(state) { state.isLoginOpen = true; },
     closeLogin(state) { state.isLoginOpen = false; },

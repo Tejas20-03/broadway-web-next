@@ -61,6 +61,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     ? reOrderData.orderType.toLowerCase() === 'pickup'
     : orderType === 'pickup';
 
+  // Prefer prop orderId, then live status id (available once status API responds)
+  const displayOrderId = orderId || orderStatus?.id;
+
   const dispatch = useAppDispatch();
   const [toastMsg, setToastMsg] = useState('');
 
@@ -111,7 +114,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         <XCircle size={80} className="text-red-500 mb-6" />
         <h1 className="text-3xl font-black text-white uppercase mb-3">Order Cancelled</h1>
         <p className="text-neutral-400 text-center mb-2">
-          We&apos;re sorry, your order #{orderId} has been cancelled.
+          We&apos;re sorry, your order #{displayOrderId} has been cancelled.
         </p>
         <p className="text-neutral-500 text-sm text-center mb-8">Please call 111-339-339 for further details.</p>
         <button
@@ -163,10 +166,10 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
             <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
                 <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">Order Ref</span>
                 <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black text-white tracking-tight">#{orderId ?? '—'}</span>
-                    {orderId && (
+                    <span className="text-2xl font-black text-white tracking-tight">#{displayOrderId ?? '\u2014'}</span>
+                    {displayOrderId && (
                         <button
-                            onClick={() => navigator.clipboard.writeText(orderId)}
+                            onClick={() => navigator.clipboard.writeText(displayOrderId)}
                             className="text-neutral-500 hover:text-yellow-500 transition-colors"
                         >
                             <Copy size={14} />
