@@ -3,8 +3,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Plus, Star, Flame, Sparkles, TrendingUp, Zap, Percent } from 'lucide-react';
+import { Plus, Star, Sparkles, Percent } from 'lucide-react';
 import { Product } from '@/types';
+import { useLocation } from '@/context/LocationContext';
 
 interface ProductCardProps {
   product: Product;
@@ -12,12 +13,25 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
+  const { location } = useLocation();
+  const isPickup = location.orderType === 'pickup';
+
   const imageUrl = product.image && product.image.length > 0
     ? product.image 
     : 'https://images.unsplash.com/photo-1513104890138-7c749659a591';
 
-  const discountPercentage = product.originalPrice && product.originalPrice > product.basePrice
-    ? Math.round(((product.originalPrice - product.basePrice) / product.originalPrice) * 100)
+  // Show correct starting price based on order type
+  // basePrice = takeaway price; deliveryBasePrice = delivery price (usually higher)
+  const displayPrice = isPickup
+    ? product.basePrice
+    : (product.deliveryBasePrice ?? product.basePrice);
+
+  const originalDisplayPrice = isPickup
+    ? undefined  // no strikethrough for pickup — takeaway is always the cheaper price
+    : (product.originalPrice && product.originalPrice > displayPrice ? product.originalPrice : undefined);
+
+  const discountPercentage = originalDisplayPrice
+    ? Math.round(((originalDisplayPrice - displayPrice) / originalDisplayPrice) * 100)
     : 0;
 
   const renderBadges = () => {
@@ -88,15 +102,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
 
         <div className="mt-auto pt-3 flex items-end justify-between">
             <div className="flex flex-col leading-none">
-                {discountPercentage > 0 && (
+                {originalDisplayPrice && (
                     <span className="text-[8px] md:text-[10px] text-neutral-600 font-bold line-through mb-0.5">
-                        Rs. {product.originalPrice}
+                        Rs. {originalDisplayPrice}
                     </span>
                 )}
                 <div className="flex items-baseline gap-0.5">
                     <span className="text-yellow-500 text-[9px] md:text-xs font-bold">Rs.</span>
                     <span className="text-white text-lg md:text-2xl font-black tracking-tighter">
-                        {product.basePrice}
+                        {displayPrice}
                     </span>
                 </div>
             </div>
@@ -108,4 +122,5 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
     </div>
   );
 };
+
 

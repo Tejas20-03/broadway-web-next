@@ -4,10 +4,18 @@ import { CartItem } from '../../types';
 export interface LastOrder {
   items: CartItem[];
   subtotal: number;
-  tax: number;
+  taxBreakdown: number;    // GST extracted for display — already included in prices
+  preTaxSubtotal: number; // subtotal - taxBreakdown (sent as orderamount to API)
   deliveryFee: number;
   total: number;
+  discountAmount?: number; // voucher discount amount
+  voucher?: string;        // voucher code applied
+  orderId?: string;
+  encOrderId?: string;
+  deliveryTime?: string;
   orderAddress?: string;
+  orderType?: string;
+  paymentType?: string;
 }
 
 interface UiState {

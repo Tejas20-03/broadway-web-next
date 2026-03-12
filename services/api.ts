@@ -44,7 +44,9 @@ export const fetchCities = async (): Promise<City[]> => {
       return data.map((c: any) => ({
         name: c.Name ?? '',
         imageUrl: c.ImageURL ?? '',
-        deliveryTax: parseFloat(c.delivery_tax ?? '0'),
+        // API returns delivery_tax as a percentage integer (e.g. 16 for 16%).
+        // Divide by 100 so it can be used directly as a decimal multiplier (0.16).
+        deliveryTax: parseFloat(c.delivery_tax ?? '0') / 100,
         deliveryFees: parseFloat(c.delivery_fees ?? '0'),
       })).filter(c => c.name);
     }
@@ -227,12 +229,25 @@ export const fetchMenuData = async (
         const name = item.Name || item.ProductName || 'Unknown Item';
         const description = item.Description || item.SpecialDealText || '';
         
-        // Price logic: Prefer Discounted if active
-        const price = (item.DiscountedPrice && item.DiscountedPrice > 0) 
-            ? parseFloat(item.DiscountedPrice) 
-            : parseFloat(item.TakeawayPrice || item.Price || '0');
+        // Price logic: TakeawayPrice is the primary (pickup/takeaway) price.
+        // MinDeliveryPrice holds the delivery price for single-size items (> 0 when set).
+        // DiscountedPrice overrides both when active (items with a special deal).
+        const takeawayPrice = parseFloat(item.TakeawayPrice || item.Price || '0');
+        const deliveryItemPrice = parseFloat(item.MinDeliveryPrice || '0');
+        const discountedPrice = item.DiscountedPrice && item.DiscountedPrice > 0
+          ? parseFloat(item.DiscountedPrice)
+          : 0;
+        const basePrice = discountedPrice > 0 ? discountedPrice : takeawayPrice;
+        const deliveryBasePrice = discountedPrice > 0
+          ? discountedPrice
+          : (deliveryItemPrice > 0 ? deliveryItemPrice : takeawayPrice);
+        // Original (undiscounted) price for strike-through display on card
+        const originalPrice = deliveryItemPrice > 0 && deliveryItemPrice > basePrice
+          ? deliveryItemPrice
+          : undefined;
 
         const image = item.ImageBase64 || item.ProductImage || item.ItemImage || ''; 
+        const minimumDelivery = parseFloat(item.MinimumDelivery || '0');
 
         // 3. Map Sizes
         let sizes: ProductSize[] = [];
@@ -241,6 +256,7 @@ export const fetchMenuData = async (
             id: s.ID?.toString() || s.SizeID?.toString(),
             label: s.Name || s.SizeName || 'Regular',
             price: (s.DiscountedPrice && s.DiscountedPrice > 0) ? parseFloat(s.DiscountedPrice) : parseFloat(s.Price || s.TakeawayPrice || '0'),
+            takeAwayPrice: (s.DiscountedPrice && s.DiscountedPrice > 0) ? parseFloat(s.DiscountedPrice) : parseFloat(s.TakeawayPrice || s.Price || '0'),
             basePrice: parseFloat(s.Price || s.TakeawayPrice || '0')
           }));
         } else {
@@ -248,7 +264,9 @@ export const fetchMenuData = async (
             sizes = [{
                 id: item.SizeID?.toString() || 'def-size',
                 label: 'Regular',
-                price: price
+                price: deliveryBasePrice,
+                takeAwayPrice: basePrice,
+                basePrice: deliveryBasePrice,
             }];
         }
 
@@ -275,7 +293,10 @@ export const fetchMenuData = async (
           id: productId,
           name: name,
           description: description,
-          basePrice: price,
+          basePrice: basePrice,
+          deliveryBasePrice: deliveryBasePrice !== basePrice ? deliveryBasePrice : undefined,
+          originalPrice: originalPrice,
+          minimumDelivery: minimumDelivery > 0 ? minimumDelivery : undefined,
           image: image,
           category: categoryId,
           tags: item.IsNewItem ? ['New'] : [],
@@ -343,42 +364,70 @@ export const verifyCode = async (
 // Orders: Place order (POST)
 // ---------------------------------------------------------------------------
 export interface OrderPayload {
+  customerNumberVerification?: null | string;
   fullname: string;
   phone: string;
   email?: string;
-  ordertype: 'Delivery' | 'Pickup';
+  // Delivery-only fields (area-based). NOT sent for pickup.
+  customerEmail?: string;
   Area?: string;
   cityname?: string;
-  Outlet?: string;
   customeraddress?: string;
   Landmark?: string;
+  // Delivery with geolocation (sent instead of Area/cityname when outlet resolved from coords)
+  lat?: number;
+  lng?: number;
+  // Pickup-only field. NOT sent for delivery.
+  Outlet?: string;
+  ordertype: 'Delivery' | 'Pickup';
+  Remarks?: string;
   paymenttype: 'Cash' | 'Card';
-  orderamount: number;
-  taxamount: number;
+  orderamount: number;        // unrounded pre-tax subtotal
+  taxamount: number;          // unrounded tax amount
+  tax: number;                // same value as taxamount — Cordova sends both
+  deliverytime: string;       // "YYYY-MM-DD HH:MM:SS"
   totalamount: number;
   deliverycharges: number;
-  discountamount?: number;
+  discountamount?: number | string;  // string "0" when no discount (Cordova convention)
   Voucher?: string;
   orderdata: any[];
   WalletVerificationCode?: string;
   platform?: string;
+  AppVersion?: number | string;
+  DeviceSignalID?: string;
 }
 
 export const placeOrder = async (
   payload: OrderPayload,
-): Promise<{ success: boolean; orderId?: string; message?: string }> => {
+): Promise<{
+  success: boolean;
+  orderId?: string;
+  encOrderId?: string;
+  deliveryTime?: string;   // approx. minutes as string, e.g. "30"
+  orderAmount?: number;
+  paymentUrl?: string;     // non-empty when card/online payment → redirect here
+  message?: string;
+}> => {
   const url = `${BASE_URL}/BroadwayAPI.aspx?Method=ProcessOrder&Phone=${encodeURIComponent(payload.phone)}`;
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, platform: 'Web' }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (data?.ResponseType === 1 || data?.responseType === 1 || data?.OrderID) {
-      return { success: true, orderId: String(data.OrderID ?? data.orderId ?? '') };
+      const orderId = String(data.OrderID ?? data.orderId ?? '');
+      const encOrderId = decodeURIComponent(String(data.EncOrderID ?? ''));
+      const deliveryTime = String(data.DeliveryTime ?? '');
+      const orderAmount = data.OrderAmount ?? undefined;
+      // Cordova: if data.URL != '' → redirect to payment gateway (card payments)
+      if (data?.URL && String(data.URL).trim().length > 5) {
+        return { success: true, orderId, encOrderId, deliveryTime, orderAmount, paymentUrl: String(data.URL) };
+      }
+      return { success: true, orderId, encOrderId, deliveryTime, orderAmount };
     }
-    return { success: false, message: data?.Message ?? 'Order failed. Please try again.' };
+    return { success: false, message: data?.Message ?? data?.message ?? 'Order failed. Please try again.' };
   } catch {
     return { success: false, message: 'Network error. Please check your connection.' };
   }
@@ -483,7 +532,7 @@ export const fetchMyOrders = async (phone: string): Promise<Order[]> => {
     if (String(data?.ResponseType) === '1' && Array.isArray(data?.Data)) {
       return data.Data.map((o: any) => ({
         id: String(o.ID ?? o.OrderID ?? ''),
-        encId: String(o.EncOrderID ?? o.ID ?? ''),
+        encId: decodeURIComponent(String(o.EncOrderID ?? o.ID ?? '')),
         amount: parseFloat(o.OrderAmount ?? '0'),
         date: o.Created ?? '',
         outletName: o.OutletName ?? '',
@@ -574,7 +623,7 @@ export const fetchPendingOrders = async (phone: string): Promise<PendingOrder[]>
     if (String(data?.ResponseType) === '1' && Array.isArray(data?.Data)) {
       return data.Data.map((o: any) => ({
         id: String(o.ID ?? ''),
-        encId: String(o.EncOrderID ?? ''),
+        encId: decodeURIComponent(String(o.EncOrderID ?? '')),
         amount: parseFloat(o.OrderAmount ?? '0'),
         status: o.Status ?? 'Pending',
       }));
@@ -663,11 +712,14 @@ export const fetchProductOptions = async (
       };
     }
 
-    // Multiple sizes (or single named size): build per-size groups
+    // Multiple sizes (or single named size): build per-size groups.
+    // Store both delivery and takeaway prices so ProductModal can pick the
+    // correct one based on the active order type (matching Cordova behaviour).
     const sizes: ProductSize[] = rawSizes.map((s: any) => ({
       id: String(s.ID),
       label: s.Size ?? '',
       price: s.DiscountedPrice > 0 ? parseFloat(s.DiscountedPrice) : parseFloat(s.DeliveryPrice ?? 0),
+      takeAwayPrice: s.DiscountedPrice > 0 ? parseFloat(s.DiscountedPrice) : parseFloat(s.TakeAwayPrice ?? s.TakeawayPrice ?? s.DeliveryPrice ?? 0),
       basePrice: parseFloat(s.DeliveryPrice ?? 0),
       image: s.SizeImage ?? '',
     }));
@@ -680,5 +732,137 @@ export const fetchProductOptions = async (
     return { sizes, sizeOptionGroups, optionGroups: undefined };
   } catch {
     return {};
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Voucher: validate and get discount amount
+// Cordova: POST https://beta.broadwaypizza.com.pk/BroadwayAPI.aspx?Method=CheckVoucherV2
+// ---------------------------------------------------------------------------
+export interface VoucherResult {
+  valid: boolean;
+  amount: number;
+  code: string;
+  message?: string;
+}
+
+export const checkVoucher = async (
+  voucherCode: string,
+  locationData: { ordertype: string | null; city: string | null; area: string | null; outlet: string | null },
+  cartData: any[],
+): Promise<VoucherResult> => {
+  try {
+    const res = await fetch(`${BASE_URL}/BroadwayAPI.aspx?Method=CheckVoucherV2`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voucherCode, locationData, cartData }),
+    });
+    const data = await res.json();
+    if (data?.responseType) {
+      if (data.VoucherAmount === 0 || !data.VoucherAmount) {
+        return { valid: false, amount: 0, code: voucherCode, message: data.Message ?? 'Invalid voucher.' };
+      }
+      return { valid: true, amount: +data.VoucherAmount, code: voucherCode };
+    }
+    return { valid: false, amount: 0, code: voucherCode, message: data?.Message ?? 'Could not validate voucher.' };
+  } catch {
+    return { valid: false, amount: 0, code: voucherCode, message: 'Network error. Please try again.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Order Status: poll live status after order placed
+// Cordova: GET BroadwayAPI.aspx?Method=CheckOrderStatusV1&OrderID=
+// ---------------------------------------------------------------------------
+export type OrderStatusPhase = 'Pending' | 'Confirmed' | 'Preparing' | 'Out for Delivery' | 'Delivered' | 'Ready for Pickup' | 'Rejected';
+
+export interface OrderStatus {
+  id: string;
+  status: OrderStatusPhase | string;
+  deliveryTime: string;  // ETA in minutes
+  orderAmount: number;
+  created: string;
+  orderType: string;
+  riderName?: string;
+  riderPhone?: string;
+  branchId?: string;
+}
+
+export const fetchOrderStatus = async (orderId: string): Promise<OrderStatus | null> => {
+  try {
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=CheckOrderStatusV1&OrderID=${encodeURIComponent(orderId)}`);
+    if (!data?.Data?.[0]) return null;
+    const d = data.Data[0];
+    return {
+      id: String(d.id ?? orderId),
+      status: d.status ?? 'Pending',
+      deliveryTime: String(d.deliverytime ?? '30'),
+      orderAmount: parseFloat(d.orderamount ?? '0'),
+      created: d.created ?? '',
+      orderType: d.ordertype ?? '',
+      riderName: d.RiderName ?? d.ridername ?? undefined,
+      riderPhone: d.RiderPhone ?? d.riderphone ?? undefined,
+      branchId: d.branchId ?? undefined,
+    };
+  } catch {
+    return null;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// ReOrder: fetch order details for "Order Again" and track page
+// Cordova: GET BroadwayAPI.aspx?Method=ReOrderV1&OrderID=
+// ---------------------------------------------------------------------------
+export interface ReOrderDetails {
+  customerName: string;
+  customerMobile: string;
+  email: string;
+  paymentType: string;
+  orderType: string;
+  userArea: string;
+  outlet: string;
+  outletId: string;
+  city: string;
+  deliveryAddress: string;
+  remarks: string;
+  deliveryTax: number;
+  subTotal: number;
+  taxAmount: number;
+  deliveryFee: number;
+  orderAmount: number;
+  tax: string;           // GST percentage label e.g. "15"
+  riderName: string;
+  riderPhone: string;
+  products: any[];       // raw items from Data[]
+}
+
+export const fetchReOrderDetails = async (orderId: string): Promise<ReOrderDetails | null> => {
+  try {
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=ReOrderV1&OrderID=${encodeURIComponent(orderId)}`);
+    if (!data || data.ResponseType === 0) return null;
+    return {
+      customerName: data.CustomerName ?? '',
+      customerMobile: data.CustomerMobile ?? '',
+      email: data.Email ?? '',
+      paymentType: data.PaymentType ?? '',
+      orderType: data.OrderType ?? '',
+      userArea: data.UserArea ?? '',
+      outlet: data.Outlet ?? '',
+      outletId: data.OutletID ?? '',
+      city: data.City ?? '',
+      deliveryAddress: data.DeliveryAddress ?? '',
+      remarks: data.Remarks ?? '',
+      deliveryTax: parseFloat(data.DeliveryTax ?? '0'),
+      subTotal: parseFloat(data.SubTotal ?? '0'),
+      taxAmount: parseFloat(data.TaxAmount ?? '0'),
+      deliveryFee: parseFloat(data.DeliveryFee ?? '0'),
+      orderAmount: parseFloat(data.OrderAmount ?? '0'),
+      tax: String(data.Tax ?? ''),
+      riderName: data.RiderName ?? '',
+      riderPhone: data.RiderPhone ?? '',
+      products: Array.isArray(data.Data) ? data.Data : [],
+    };
+  } catch {
+    return null;
   }
 };

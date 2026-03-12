@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, CreditCard, Banknote, User, Phone, Mail, ChevronRight, ShieldCheck, Truck, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { CartItem } from '@/types';
@@ -14,10 +14,12 @@ interface CheckoutPageProps {
   onBack: () => void;
   cartItems: CartItem[];
   subtotal: number;
-  onPlaceOrder: (orderAddress?: string) => void;
+  discountAmount?: number;
+  voucher?: string;
+  onPlaceOrder: (orderAddress?: string, orderId?: string, encOrderId?: string) => void;
 }
 
-export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cartItems, subtotal, onPlaceOrder }) => {
+export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cartItems, subtotal, discountAmount = 0, voucher = '', onPlaceOrder }) => {
   const { user } = useUser();
   const { location } = useLocation();
   const guestPhone = useAppSelector(state => state.user.guestPhone);
@@ -29,13 +31,43 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
   const [email, setEmail] = useState(user?.email ?? '');
   const [address, setAddress] = useState('');
   const [landmark, setLandmark] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [orderResult, setOrderResult] = useState<{ success: boolean; message: string } | null>(null);
   const [submitOrder, { isLoading: isSubmitting }] = usePlaceOrderMutation();
 
-  const deliveryFee = location.deliveryFee;
-  const taxRate = location.deliveryTax;
-  const tax = Math.round(subtotal * taxRate);
-  const total = subtotal + tax + deliveryFee;
+  // Reset transactional fields each time the checkout page opens (matching Cordova:
+  // form fields are freshly rendered per order; name/phone/email come from profile).
+  useEffect(() => {
+    if (isOpen) {
+      setAddress('');
+      setLandmark('');
+      setRemarks('');
+      setOrderResult(null);
+      setPaymentMethod('cod');
+      setDeliveryTime('asap');
+      // Re-sync contact fields from user profile in case they changed
+      setName(user?.name ?? '');
+      setPhone(user?.phone ?? guestPhone ?? '');
+      setEmail(user?.email ?? '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // For pickup orders delivery fee is always 0 (matching Cordova: appDeliveryFeeCurrent = 0 for Pickup)
+  const deliveryFee = location.orderType === 'pickup' ? 0 : location.deliveryFee;
+  // Apply voucher discount first (matching Cordova: totalPc = totalPc - vouch)
+  const effectiveSubtotal = Math.max(0, subtotal - discountAmount);
+  // GST is included in product prices (tax-inclusive pricing), so it is
+  // extracted for the breakdown display only — NOT added on top.
+  // Normalize: API returns decimal (0.15) but old persisted state may store whole number (15)
+  const taxRate = location.deliveryTax >= 1 ? location.deliveryTax / 100 : location.deliveryTax;
+  // Rounded values for clean UI display
+  const taxBreakdown = Math.round(effectiveSubtotal * taxRate);
+  const preTaxSubtotal = effectiveSubtotal - taxBreakdown;
+  const total = effectiveSubtotal + deliveryFee;
+  // Unrounded values for API payload (matching Cordova: taxToDed = totalPrice * gst/100, subtotal = totalPrice - taxToDed)
+  const apiTaxAmount = effectiveSubtotal * taxRate;
+  const apiOrderAmount = effectiveSubtotal - apiTaxAmount;
 
   const areaDisplay = location.orderType === 'delivery'
     ? [location.area, location.city].filter(Boolean).join(', ')
@@ -44,39 +76,91 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
   const handleConfirmOrder = async () => {
     if (!name || !phone) return;
     setOrderResult(null);
-    const orderdata = cartItems.map(item => ({
-      ProductId: item.productId,
-      ProductName: item.name,
-      Quantity: item.quantity,
-      Price: item.price,
-      selectedSize: item.selectedSize?.label ?? '',
-      selectedOptions: item.selectedOptions ?? {},
-    }));
+    // Build orderdata matching Cordova's cart.products structure exactly.
+    // Key corrections vs previous version:
+    //   - ItemID/SizeID/OptionID are numbers (Cordova stores them as numbers)
+    //   - OptionGroupName is the group's display name, not its ID
+    //   - CategoryName from cart item (stored when adding to cart)
+    //   - No ProductDescription field (Cordova doesn't send it)
+    const orderdata = cartItems.map(item => {
+      const options = item.selectedOptions
+        ? Object.entries(item.selectedOptions).flatMap(([groupId, opts]) =>
+            opts.map(opt => ({
+              OptionID: parseInt(opt.id, 10) || opt.id,
+              OptionName: opt.name,
+              // Use stored group name; fall back to groupId only if name unavailable
+              OptionGroupName: item.selectedOptionGroupNames?.[groupId] ?? groupId,
+              Price: opt.price,
+              Quantity: 1,
+            }))
+          )
+        : [];
+      return {
+        ItemID: parseInt(item.productId, 10) || item.productId,
+        ProductName: item.name,
+        ItemImage: item.image,
+        Quantity: item.quantity,
+        CategoryName: item.category ?? '',
+        MinimumDelivery: item.minimumDelivery ?? 0,
+        CookingInstructions: '',
+        options,
+        SizeID: item.selectedSize ? (parseInt(item.selectedSize.id, 10) || item.selectedSize.id) : '',
+        Price: item.price,
+        TotalProductPrice: item.price * item.quantity,
+        discountGiven: item.discountGiven ?? 0,
+      };
+    });
     try {
+      // Build payload matching Cordova exactly — field presence differs by order type.
+      // Delivery (area-based): Area + cityname + customeraddress + customerEmail + Landmark — NO Outlet
+      // Pickup: Outlet only — NO Area/cityname/customeraddress
+      const isPickupOrder = location.orderType === 'pickup';
+
+      const locationFields = isPickupOrder
+        ? { Outlet: location.outlet }
+        : {
+            Area: location.area,
+            cityname: location.city,
+            customeraddress: address,
+            customerEmail: email,
+            Landmark: landmark,
+          };
+
       const result = await submitOrder({
+        customerNumberVerification: null,  // Cordova always sends this
         fullname: name,
         phone,
-        ordertype: location.orderType === 'pickup' ? 'Pickup' : 'Delivery',
-        Area: location.area,
-        cityname: location.city,
-        Outlet: location.outlet,
-        customeraddress: address,
-        Landmark: landmark,
+        email,
+        ...locationFields,
+        ordertype: isPickupOrder ? 'Pickup' : 'Delivery',
+        Remarks: remarks,
         paymenttype: paymentMethod === 'cod' ? 'Cash' : 'Card',
-        orderamount: subtotal,
-        taxamount: tax,
-        totalamount: total,
+        // Unrounded floats matching Cordova: taxToDed = totalPrice * gst/100, orderamount = totalPrice - taxToDed
+        orderamount: apiOrderAmount,
+        taxamount: apiTaxAmount,
+        tax: apiTaxAmount,
+        deliverytime: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        totalamount: effectiveSubtotal,
         deliverycharges: deliveryFee,
-        discountamount: 0,
-        Voucher: '',
+        discountamount: discountAmount > 0 ? discountAmount : '0',  // Cordova sends string "0" when no discount
+        Voucher: voucher,
         orderdata,
         WalletVerificationCode: user?.walletCode ?? '',
         platform: 'Web',
+        AppVersion: 1,
+        DeviceSignalID: '',
       }).unwrap();
       if (result.success) {
-        const fullAddress = [address, landmark, location.area, location.city].filter(Boolean).join(', ');
+        // Card/online payment: redirect to payment gateway (Cordova: if data.URL != "")
+        if (result.paymentUrl) {
+          window.location.href = result.paymentUrl;
+          return;
+        }
+        const fullAddress = location.orderType === 'pickup'
+          ? (location.outlet || location.area || location.city || 'Pickup')
+          : [address, landmark, location.area, location.city].filter(Boolean).join(', ');
         setOrderResult({ success: true, message: `Order placed! ID: ${result.orderId ?? 'N/A'}` });
-        setTimeout(() => onPlaceOrder(fullAddress), 2000);
+        setTimeout(() => onPlaceOrder(fullAddress, result.orderId, result.encOrderId), 2000);
       } else {
         setOrderResult({ success: false, message: result.message ?? 'Order failed. Please try again.' });
       }
@@ -139,14 +223,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                     </div>
                 </section>
 
-                {/* 2. Delivery Address */}
+                {/* 2. Delivery Address / Pickup Outlet */}
                 <section className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5 relative overflow-hidden">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold text-sm">2</div>
-                            <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">Delivery Address</h2>
+                            <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">
+                                {location.orderType === 'pickup' ? 'Pickup Outlet' : 'Delivery Address'}
+                            </h2>
                         </div>
-                        <button className="text-yellow-500 text-xs font-bold uppercase hover:underline">Edit Map</button>
+                        {location.orderType !== 'pickup' && (
+                            <button className="text-yellow-500 text-xs font-bold uppercase hover:underline">Edit Map</button>
+                        )}
                     </div>
 
                     <div className="w-full h-36 rounded-xl bg-[#161616] mb-6 relative overflow-hidden border border-white/10 group cursor-pointer">
@@ -168,10 +256,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <input type="text" placeholder="Apartment / House / Office No." value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
-                        <input type="text" placeholder="Street Name / Landmarks" value={landmark} onChange={e => setLandmark(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
-                    </div>
+                    {location.orderType === 'pickup' ? (
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-sm text-yellow-300 font-medium">
+                            You will collect your order from the outlet above.
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <input type="text" placeholder="Apartment / House / Office No." value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
+                            <input type="text" placeholder="Street Name / Landmarks" value={landmark} onChange={e => setLandmark(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
+                        </div>
+                    )}
                 </section>
 
                 {/* 3. Payment Method */}
@@ -215,9 +309,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         </div>
                     </div>
                 </section>
+                {/* 4. Cooking / Special Instructions */}
+                <section className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold text-sm">4</div>
+                        <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">Special Instructions</h2>
+                    </div>
+                    <textarea
+                        placeholder="Any special requests? (e.g. extra spicy, no onions...)"
+                        value={remarks}
+                        onChange={e => setRemarks(e.target.value)}
+                        rows={3}
+                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600 resize-none text-sm"
+                    />
+                </section>
             </div>
-
-            {/* RIGHT COLUMN: ORDER SUMMARY */}
             <div className="lg:w-[400px] shrink-0">
                 <div className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5 sticky top-32">
                     <h2 className="text-xl font-bold text-white uppercase tracking-wide mb-6">Payment Summary</h2>
@@ -242,13 +348,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
 
                     <div className="border-t border-white/5 pt-4 space-y-2 mb-6">
                         <div className="flex justify-between text-neutral-400 text-xs">
-                            <span>Subtotal</span>
+                            <span>Items Total</span>
                             <span>Rs. {subtotal}</span>
                         </div>
-                        <div className="flex justify-between text-neutral-400 text-xs">
-                            <span>GST ({Math.round(taxRate * 100)}%)</span>
-                            <span>Rs. {tax}</span>
-                        </div>
+                        {discountAmount > 0 && (
+                          <div className="flex justify-between text-green-500 text-xs font-bold">
+                              <span>Voucher ({voucher})</span>
+                              <span>- Rs. {discountAmount}</span>
+                          </div>
+                        )}
+                        {taxRate > 0 && (
+                          <div className="flex justify-between text-neutral-500 text-[10px]">
+                              <span>Incl. GST ({Math.round(taxRate * 100)}%)</span>
+                              <span>Rs. {taxBreakdown}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-neutral-400 text-xs">
                             <span>Delivery Fee</span>
                             <span>{deliveryFee > 0 ? `Rs. ${deliveryFee}` : 'Free'}</span>

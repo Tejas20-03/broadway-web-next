@@ -1,31 +1,143 @@
 'use client'
 
-
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Check, Clock, MapPin, Phone, Home, ChevronRight, Copy, Printer, Bike, ChefHat, ShoppingBag, Receipt, Star } from 'lucide-react';
-import { CartItem, ProductOption } from '@/types';
+import { Check, Clock, MapPin, Home, Copy, Bike, ChefHat, ShoppingBag, Receipt, Phone, RotateCcw, XCircle } from 'lucide-react';
+import { useGetOrderStatusQuery, useGetReOrderDetailsQuery } from '@/store/apiSlice';
+import { useAppDispatch } from '@/store';
+import { cartActions } from '@/store/slices/cartSlice';
 
 interface OrderConfirmationPageProps {
   isOpen: boolean;
   onClose: () => void;
-  cartItems: CartItem[];
-  subtotal: number;
-  tax: number;
-  deliveryFee: number;
-  total: number;
   orderId?: string;
+  encOrderId?: string;
   orderAddress?: string;
   orderType?: string;
 }
 
-export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ 
-  isOpen, onClose, cartItems, subtotal, tax, deliveryFee, total, orderId = "5438180", orderAddress, orderType
+// Derive visual phase from Cordova status + time math (mirrors thankyou.html logic).
+// "Confirmed" means the kitchen acknowledged — we then use elapsed time to sub-divide.
+function derivePhase(
+  status: string,
+  deliveryTimeMins: number,
+  orderCreated: string,
+  isPickup: boolean,
+): 'pending' | 'preparing' | 'onTheWay' | 'delivered' | 'rejected' {
+  if (status === 'Rejected') return 'rejected';
+  if (status !== 'Confirmed') return 'pending';
+
+  // Cordova: cookingTime = deliveryTime / 2
+  const cookingMs = (deliveryTimeMins / 2) * 60 * 1000;
+  const deliveryMs = (deliveryTimeMins + 10) * 60 * 1000;
+
+  const orderTime = orderCreated ? new Date(orderCreated).getTime() : 0;
+  if (!orderTime) return 'preparing';
+
+  const elapsed = Date.now() - orderTime;
+
+  if (elapsed >= deliveryMs) return 'delivered';
+  if (elapsed >= cookingMs) return 'onTheWay';
+  return 'preparing';
+}
+
+export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
+  isOpen, onClose,
+  orderId, encOrderId, orderAddress, orderType = 'delivery',
 }) => {
+  const isPickup = orderType === 'pickup';
+
+  // Poll live status every 2 s, matching Cordova's setInterval(checkDeliveryStatus, 2000)
+  const { data: orderStatus } = useGetOrderStatusQuery(encOrderId ?? '', {
+    skip: !encOrderId,
+    pollingInterval: 2000,
+  });
+
+  // Fetch full order receipt from ReOrderV1
+  const { data: reOrderData } = useGetReOrderDetailsQuery(encOrderId ?? '', {
+    skip: !encOrderId,
+  });
+
+  const dispatch = useAppDispatch();
+  const [toastMsg, setToastMsg] = useState('');
+
+  const handleOrderAgain = () => {
+    if (!reOrderData?.products.length) return;
+    reOrderData.products.forEach((item: any) => {
+      const qty = parseInt(item.Quantity) || 1;
+      const unitPrice = parseFloat(item.TotalProductPrice) / qty;
+      dispatch(cartActions.addToCart({
+        productId: String(item.ItemID),
+        name: item.ProductName,
+        image: item.ItemImage ?? '',
+        price: unitPrice,
+        quantity: qty,
+      }));
+    });
+    setToastMsg(`${reOrderData.products.length} item(s) added to your cart!`);
+    setTimeout(() => {
+      setToastMsg('');
+      onClose();
+    }, 1500);
+  };
+
+  const deliveryTimeMins = parseInt(orderStatus?.deliveryTime ?? '30', 10);
+  const phase = useMemo(
+    () => orderStatus
+      ? derivePhase(orderStatus.status, deliveryTimeMins, orderStatus.created, isPickup)
+      : 'pending',
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orderStatus?.status, orderStatus?.created, deliveryTimeMins, isPickup],
+  );
+
   if (!isOpen) return null;
+
+  // Toast overlay
+  const toastEl = toastMsg ? (
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[600] bg-yellow-500 text-black font-black text-sm px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4 duration-300 flex items-center gap-2">
+      <Check size={16} strokeWidth={3} />
+      {toastMsg}
+    </div>
+  ) : null;
+
+  // Cancelled order overlay
+  if (phase === 'rejected') {
+    return (
+      <div className="fixed inset-0 z-[500] bg-[#050505] flex flex-col items-center justify-center p-6">
+        {toastEl}
+        <XCircle size={80} className="text-red-500 mb-6" />
+        <h1 className="text-3xl font-black text-white uppercase mb-3">Order Cancelled</h1>
+        <p className="text-neutral-400 text-center mb-2">
+          We&apos;re sorry, your order #{orderId} has been cancelled.
+        </p>
+        <p className="text-neutral-500 text-sm text-center mb-8">Please call 111-339-339 for further details.</p>
+        <button
+          onClick={onClose}
+          className="bg-yellow-500 text-black font-black px-8 py-4 rounded-xl uppercase tracking-widest hover:bg-yellow-400 transition-colors"
+        >
+          Return Home
+        </button>
+      </div>
+    );
+  }
+
+  const progressWidth =
+    phase === 'pending' ? '0%' :
+    phase === 'preparing' ? '33%' :
+    phase === 'onTheWay' ? '66%' : '100%';
+
+  const statusLabel =
+    phase === 'pending' ? 'Awaiting Confirmation' :
+    phase === 'preparing' ? 'In Kitchen' :
+    phase === 'onTheWay' ? (isPickup ? 'Ready for Pickup' : 'On the Way') : 'Delivered';
+
+  const etaDisplay = orderStatus?.deliveryTime
+    ? `${orderStatus.deliveryTime} MINS`
+    : '25-35 MINS';
 
   return (
     <div className="fixed inset-0 z-[500] bg-[#050505] overflow-y-auto animate-in zoom-in-95 duration-500 custom-scrollbar flex flex-col items-center">
+      {toastEl}
       
       {/* Background Ambient Glow */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[500px] bg-yellow-500/10 blur-[120px] rounded-full pointer-events-none"></div>
@@ -45,27 +157,36 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         {/* Info Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-in slide-in-from-bottom-5 duration-700 delay-200">
             {/* Order # */}
-            <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+            <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
                 <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">Order Ref</span>
                 <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black text-white tracking-tight">#{orderId}</span>
-                    <button className="text-neutral-500 hover:text-yellow-500 transition-colors"><Copy size={14} /></button>
+                    <span className="text-2xl font-black text-white tracking-tight">#{orderId ?? '—'}</span>
+                    {orderId && (
+                        <button
+                            onClick={() => navigator.clipboard.writeText(orderId)}
+                            className="text-neutral-500 hover:text-yellow-500 transition-colors"
+                        >
+                            <Copy size={14} />
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Time */}
-            <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
-                <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">Arrival Window</span>
+            <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
+                <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">
+                    {isPickup ? 'Ready In' : 'Arrival Window'}
+                </span>
                 <div className="flex items-center gap-2 text-yellow-500">
                     <Clock size={20} strokeWidth={2.5} />
-                    <span className="text-2xl font-black tracking-tight">25-35 MINS</span>
+                    <span className="text-2xl font-black tracking-tight">{etaDisplay}</span>
                 </div>
             </div>
 
             {/* Total */}
-            <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
+            <div className="bg-[#121212] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
                 <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">Payment Success</span>
-                <span className="text-2xl font-black text-white tracking-tight">Rs. {total}</span>
+                <span className="text-2xl font-black text-white tracking-tight">Rs. {reOrderData?.orderAmount ?? '—'}</span>
             </div>
         </div>
 
@@ -79,13 +200,23 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                 <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 md:p-8">
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="text-lg font-bold text-white uppercase tracking-wide">Live Status</h3>
-                        <span className="px-3 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">In Kitchen</span>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse ${
+                            phase === 'delivered'
+                                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                        }`}>
+                            {statusLabel}
+                        </span>
                     </div>
 
                     <div className="relative flex justify-between px-2">
-                        <div className="absolute top-1/2 left-0 w-full h-1 bg-[#222] -translate-y-1/2 rounded-full z-0"></div>
-                        <div className="absolute top-1/2 left-0 w-1/3 h-1 bg-yellow-500 -translate-y-1/2 rounded-full z-0 transition-all duration-1000"></div>
+                        <div className="absolute top-[14px] left-0 w-full h-1 bg-[#222] rounded-full z-0"></div>
+                        <div
+                            className="absolute top-[14px] left-0 h-1 bg-yellow-500 rounded-full z-0 transition-all duration-1000"
+                            style={{ width: progressWidth }}
+                        ></div>
 
+                        {/* Placed */}
                         <div className="relative z-10 flex flex-col items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center border-4 border-[#121212] shadow-[0_0_15px_rgba(234,179,8,0.5)]">
                                 <Check size={16} className="text-black" strokeWidth={4} />
@@ -93,34 +224,81 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                             <span className="text-[8px] font-black text-white uppercase">Placed</span>
                         </div>
 
-                        <div className="relative z-10 flex flex-col items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-[#121212] border-2 border-yellow-500 flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.3)]">
-                                <ChefHat size={18} className="text-yellow-500" />
+                        {/* Prep */}
+                        <div className={`relative z-10 flex flex-col items-center gap-2 transition-opacity ${phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered' ? 'opacity-100' : 'opacity-30'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                                phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered'
+                                    ? 'bg-[#121212] border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                                    : 'bg-[#1a1a1a] border-[#333]'
+                            }`}>
+                                <ChefHat size={18} className={phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500'} />
                             </div>
-                            <span className="text-[8px] font-black text-yellow-500 uppercase">Prep</span>
+                            <span className={`text-[8px] font-black uppercase ${phase === 'preparing' ? 'text-yellow-500' : 'text-neutral-500'}`}>Prep</span>
                         </div>
 
-                         <div className="relative z-10 flex flex-col items-center gap-2 opacity-30">
-                            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] border-2 border-[#333] flex items-center justify-center">
-                                <Bike size={18} className="text-neutral-500" />
+                        {/* Transit / Ready */}
+                        <div className={`relative z-10 flex flex-col items-center gap-2 transition-opacity ${phase === 'onTheWay' || phase === 'delivered' ? 'opacity-100' : 'opacity-30'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                                phase === 'onTheWay' || phase === 'delivered'
+                                    ? 'bg-[#121212] border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                                    : 'bg-[#1a1a1a] border-[#333]'
+                            }`}>
+                                {isPickup
+                                    ? <ShoppingBag size={18} className={phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500'} />
+                                    : <Bike size={18} className={phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500'} />
+                                }
                             </div>
-                            <span className="text-[8px] font-black text-neutral-500 uppercase">Transit</span>
+                            <span className={`text-[8px] font-black uppercase ${phase === 'onTheWay' ? 'text-yellow-500' : 'text-neutral-500'}`}>
+                                {isPickup ? 'Ready' : 'Transit'}
+                            </span>
                         </div>
 
-                         <div className="relative z-10 flex flex-col items-center gap-2 opacity-30">
-                            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] border-2 border-[#333] flex items-center justify-center">
-                                <Home size={18} className="text-neutral-500" />
+                        {/* Done */}
+                        <div className={`relative z-10 flex flex-col items-center gap-2 transition-opacity ${phase === 'delivered' ? 'opacity-100' : 'opacity-30'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                phase === 'delivered'
+                                    ? 'bg-green-500 border-4 border-[#121212] shadow-[0_0_15px_rgba(74,222,128,0.4)]'
+                                    : 'bg-[#1a1a1a] border-2 border-[#333]'
+                            }`}>
+                                {phase === 'delivered'
+                                    ? <Check size={16} className="text-black" strokeWidth={4} />
+                                    : <Home size={18} className="text-neutral-500" />
+                                }
                             </div>
-                            <span className="text-[8px] font-black text-neutral-500 uppercase">Done</span>
+                            <span className={`text-[8px] font-black uppercase ${phase === 'delivered' ? 'text-green-400' : 'text-neutral-500'}`}>Done</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Info */}
+                {/* Rider Info (delivery only, shown when API provides it) */}
+                {!isPickup && orderStatus?.riderName && (
+                    <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 md:p-8">
+                        <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-4">Your Rider</h3>
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center">
+                                <Bike size={24} className="text-yellow-500" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-white font-bold text-lg">{orderStatus.riderName}</p>
+                                {orderStatus.riderPhone && (
+                                    <a
+                                        href={`tel:${orderStatus.riderPhone}`}
+                                        className="flex items-center gap-1.5 text-yellow-500 text-sm font-bold hover:underline mt-1"
+                                    >
+                                        <Phone size={14} />
+                                        {orderStatus.riderPhone}
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Dispatch Info */}
                 <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 md:p-8">
                      <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-6">Order Dispatch</h3>
                      <div className="space-y-6">
-                        {orderType === 'pickup' ? (
+                        {isPickup ? (
                           <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] flex items-center justify-center text-yellow-500 shrink-0">
                                 <ShoppingBag size={20} />
@@ -148,8 +326,13 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                     <button onClick={onClose} className="flex-1 bg-white hover:bg-neutral-200 text-black py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors">
                         Return Home
                     </button>
-                    <button className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors shadow-[0_0_20px_rgba(234,179,8,0.3)]">
-                        Track Live
+                    <button
+                        onClick={handleOrderAgain}
+                        disabled={!reOrderData}
+                        className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors shadow-[0_0_20px_rgba(234,179,8,0.3)] flex items-center justify-center gap-2"
+                    >
+                        <RotateCcw size={14} />
+                        Order Again
                     </button>
                 </div>
 
@@ -166,28 +349,71 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                     </div>
 
                     <div className="flex-1 p-6 overflow-y-auto max-h-[400px] custom-scrollbar">
-                        <div className="space-y-6">
-                            {cartItems.map((item, index) => (
-                                <div key={index} className="flex gap-4">
-                                    <div className="w-10 h-10 rounded-lg bg-[#0a0a0a] overflow-hidden shrink-0 relative">
-                                        <Image src={item.image} alt={item.name} fill sizes="40px" className="object-cover" />
+                        {!reOrderData ? (
+                            <div className="space-y-4 animate-pulse">
+                                {[1,2,3].map(i => (
+                                    <div key={i} className="flex gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] shrink-0" />
+                                        <div className="flex-1 space-y-2 py-1">
+                                            <div className="h-2 bg-[#1a1a1a] rounded w-3/4" />
+                                            <div className="h-2 bg-[#1a1a1a] rounded w-1/2" />
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-white truncate uppercase italic">
-                                            <span className="text-yellow-500 mr-1">{item.quantity}x</span> {item.name}
-                                        </p>
-                                        <p className="text-[9px] text-neutral-500 uppercase font-black">{item.selectedSize?.label}</p>
-                                    </div>
-                                    <span className="text-xs font-bold text-white whitespace-nowrap">Rs. {item.price * item.quantity}</span>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {reOrderData.products.map((item: any, index: number) => {
+                                    const opts: string[] = Array.isArray(item.options)
+                                        ? item.options.map((o: any) => o.OptionName ?? o.optionName ?? '').filter(Boolean)
+                                        : [];
+                                    return (
+                                        <div key={index} className="flex gap-4">
+                                            <div className="w-10 h-10 rounded-lg bg-[#0a0a0a] overflow-hidden shrink-0 relative">
+                                                {item.ItemImage ? (
+                                                    <Image src={item.ItemImage} alt={item.ProductName ?? ''} fill sizes="40px" className="object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-[#1a1a1a]" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-white truncate uppercase italic">
+                                                    <span className="text-yellow-500 mr-1">{item.Quantity}x</span> {item.ProductName}
+                                                </p>
+                                                {opts.length > 0 && (
+                                                    <p className="text-[9px] text-neutral-500 uppercase font-black">{opts.join(', ')}</p>
+                                                )}
+                                            </div>
+                                            <span className="text-xs font-bold text-white whitespace-nowrap">Rs. {item.TotalProductPrice}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="p-6 bg-[#0a0a0a] border-t border-white/5 space-y-3">
-                        <div className="flex justify-between items-end">
+                    <div className="p-6 bg-[#0a0a0a] border-t border-white/5 space-y-2">
+                        <div className="flex justify-between text-neutral-500 text-xs">
+                            <span>Items Total</span>
+                            <span>{reOrderData ? `Rs. ${reOrderData.subTotal}` : '—'}</span>
+                        </div>
+                        {reOrderData && reOrderData.taxAmount > 0 && (
+                            <div className="flex justify-between text-neutral-600 text-[10px]">
+                                <span>Incl. GST{reOrderData.tax ? ` (${reOrderData.tax}%)` : ''}</span>
+                                <span>Rs. {reOrderData.taxAmount}</span>
+                            </div>
+                        )}
+                        {reOrderData && reOrderData.deliveryFee > 0 && (
+                            <div className="flex justify-between text-neutral-500 text-xs">
+                                <span>Delivery Fee</span>
+                                <span>Rs. {reOrderData.deliveryFee}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-end pt-2 border-t border-white/5">
                             <span className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
-                            <span className="text-xl font-black text-yellow-500">Rs. {total}</span>
+                            <span className="text-xl font-black text-yellow-500">
+                                {reOrderData ? `Rs. ${reOrderData.orderAmount}` : '—'}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -198,4 +424,3 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     </div>
   );
 };
-

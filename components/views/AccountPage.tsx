@@ -13,21 +13,52 @@ import {
   useUpdateCustomerInfoMutation,
   useDeleteAccountMutation,
 } from '@/store/apiSlice';
+import { fetchReOrderDetails } from '@/services/api';
+import { useAppDispatch } from '@/store';
+import { cartActions } from '@/store/slices/cartSlice';
 
 interface AccountPageProps {
   isOpen: boolean;
   onClose: () => void;
+  onViewOrder?: (orderId: string, encOrderId: string) => void;
 }
 
 type Tab = 'orders' | 'account';
 
-export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose }) => {
+export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onViewOrder }) => {
   const { user, logout } = useUser();
 
+  const dispatch = useAppDispatch();
   const [tab, setTab] = useState<Tab>('orders');
   const [saveResult, setSaveResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+  const [orderAgainLoading, setOrderAgainLoading] = useState<string | null>(null);
+
+  const handleOrderAgain = async (e: React.MouseEvent, encId: string) => {
+    e.stopPropagation();
+    setOrderAgainLoading(encId);
+    const details = await fetchReOrderDetails(encId);
+    setOrderAgainLoading(null);
+    if (!details?.products.length) return;
+    details.products.forEach((item: any) => {
+      const qty = parseInt(item.Quantity) || 1;
+      const unitPrice = parseFloat(item.TotalProductPrice) / qty;
+      dispatch(cartActions.addToCart({
+        productId: String(item.ItemID),
+        name: item.ProductName,
+        image: item.ItemImage ?? '',
+        price: unitPrice,
+        quantity: qty,
+      }));
+    });
+    setToastMsg(`${details.products.length} item(s) added to your cart!`);
+    setTimeout(() => {
+      setToastMsg('');
+      onClose();
+    }, 1500);
+  };
 
   const { data: orders = [], isLoading: loadingOrders } = useGetMyOrdersQuery(
     user?.phone ?? '', { skip: !isOpen || !user?.phone },
@@ -92,6 +123,12 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose }) => 
 
   return (
     <div className="fixed inset-0 z-[400] bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+      {toastMsg && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] bg-yellow-500 text-black font-black text-sm px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4 duration-300 flex items-center gap-2">
+          <Check size={16} strokeWidth={3} />
+          {toastMsg}
+        </div>
+      )}
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/10 px-4 md:px-8 py-4">
@@ -175,7 +212,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose }) => 
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {orders.map(order => (
-                  <div key={order.id} className="bg-[#121212] rounded-2xl border border-white/5 overflow-hidden hover:border-white/10 transition-colors">
+                  <div key={order.id} className="bg-[#121212] rounded-2xl border border-white/5 overflow-hidden hover:border-white/10 transition-colors cursor-pointer" onClick={() => onViewOrder?.(order.id, order.encId)}>
                     <div className="p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div>
@@ -205,8 +242,15 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose }) => 
                           <Star size={12} /> Feedback
                         </a>
                       )}
-                      <button className="flex-1 py-3 text-xs font-bold text-yellow-500 hover:bg-yellow-500/10 transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5">
-                        <RotateCcw size={12} /> Order Again
+                      <button
+                        onClick={e => handleOrderAgain(e, order.encId)}
+                        disabled={orderAgainLoading === order.encId}
+                        className="flex-1 py-3 text-xs font-bold text-yellow-500 hover:bg-yellow-500/10 disabled:opacity-50 transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        {orderAgainLoading === order.encId
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <RotateCcw size={12} />}
+                        Order Again
                       </button>
                     </div>
                   </div>

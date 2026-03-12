@@ -121,6 +121,7 @@ export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [trackDismissed, setTrackDismissed] = useState(false);
+  const [checkoutVoucher, setCheckoutVoucher] = useState<{ code: string; amount: number }>({ code: '', amount: 0 });
 
   // RTK Query: auto-fetches and refetches when user logs in/out
   const { data: pendingOrders = [] } = useGetPendingOrdersQuery(
@@ -200,12 +201,42 @@ export default function Home() {
     }
   }, []);
 
-  const handlePlaceOrder = useCallback((orderAddress?: string) => {
-    const totals = calculateOrderTotals(cartItems, location.deliveryFee, location.deliveryTax);
-    setLastOrder({ items: [...cartItems], ...totals, orderAddress });
+  const handlePlaceOrder = useCallback((orderAddress?: string, orderId?: string, encOrderId?: string) => {
+    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const normalizedTaxRate = location.deliveryTax >= 1 ? location.deliveryTax / 100 : location.deliveryTax;
+    const finalDeliveryFee = location.orderType === 'pickup' ? 0 : location.deliveryFee;
+    const effectiveSubtotal = Math.max(0, subtotal - checkoutVoucher.amount);
+    const taxBreakdown = Math.round(effectiveSubtotal * normalizedTaxRate);
+    const preTaxSubtotal = effectiveSubtotal - taxBreakdown;
+    const total = effectiveSubtotal + finalDeliveryFee;
+    setLastOrder({
+      items: [...cartItems],
+      subtotal,
+      taxBreakdown,
+      preTaxSubtotal,
+      deliveryFee: finalDeliveryFee,
+      total,
+      discountAmount: checkoutVoucher.amount,
+      voucher: checkoutVoucher.code,
+      orderAddress,
+      orderId,
+      encOrderId,
+      orderType: location.orderType,
+    });
     clearCart();
+    setCheckoutVoucher({ code: '', amount: 0 }); // reset voucher after order
     confirmOrder();
-  }, [cartItems, location.deliveryFee, location.deliveryTax, clearCart, confirmOrder, setLastOrder]);
+  }, [cartItems, checkoutVoucher, location, clearCart, confirmOrder, setLastOrder]);
+
+  const handleViewOrder = useCallback((orderId: string, encOrderId: string) => {
+    setLastOrder({
+      items: [], subtotal: 0, taxBreakdown: 0, preTaxSubtotal: 0,
+      deliveryFee: 0, total: 0,
+      orderId, encOrderId,
+      orderType: location.orderType,
+    });
+    confirmOrder();
+  }, [setLastOrder, confirmOrder, location.orderType]);
 
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -267,7 +298,7 @@ export default function Home() {
         onClose={closeCart}
         cartItems={cartItems}
         updateQuantity={updateQuantity}
-        onCheckout={() => { closeCart(); openCheckout(); }}
+        onCheckout={(code, amount) => { setCheckoutVoucher({ code, amount }); closeCart(); openCheckout(); }}
         products={products}
         onAddToCart={addToCart}
       />
@@ -283,23 +314,22 @@ export default function Home() {
         onBack={closeCheckout}
         cartItems={cartItems}
         subtotal={cartSubtotal}
+        discountAmount={checkoutVoucher.amount}
+        voucher={checkoutVoucher.code}
         onPlaceOrder={handlePlaceOrder}
       />
 
       <OrderConfirmationPage
         isOpen={isOrderConfirmed}
         onClose={closeOrderConfirmation}
-        cartItems={lastOrder?.items ?? []}
-        subtotal={lastOrder?.subtotal ?? 0}
-        tax={lastOrder?.tax ?? 0}
-        deliveryFee={lastOrder?.deliveryFee ?? 0}
-        total={lastOrder?.total ?? 0}
+        orderId={lastOrder?.orderId}
+        encOrderId={lastOrder?.encOrderId}
         orderAddress={lastOrder?.orderAddress}
-        orderType={location.orderType}
+        orderType={lastOrder?.orderType ?? location.orderType}
       />
 
       <LoginPage isOpen={isLoginOpen} onClose={closeLogin} />
-      <AccountPage isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
+      <AccountPage isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} onViewOrder={handleViewOrder} />
 
       <div className="flex-1 md:pl-24 transition-all duration-300 flex flex-col min-h-screen">
 

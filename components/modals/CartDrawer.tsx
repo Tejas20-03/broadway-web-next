@@ -1,12 +1,12 @@
 'use client'
 
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Minus, Plus, ShoppingBag, ArrowRight, Trash2, TicketPercent, PlusCircle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, ArrowRight, Trash2, TicketPercent, PlusCircle, CheckCircle2, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { CartItem, ProductOption, Product } from '@/types';
 import { useLocation } from '@/context/LocationContext';
-import { useGetSuggestiveItemsQuery } from '@/store/apiSlice';
+import { useGetSuggestiveItemsQuery, useCheckVoucherMutation } from '@/store/apiSlice';
 import type { SuggestiveItem } from '@/services/api';
 
 interface CartDrawerProps {
@@ -14,7 +14,7 @@ interface CartDrawerProps {
   onClose: () => void;
   cartItems: CartItem[];
   updateQuantity: (cartId: string, delta: number) => void;
-  onCheckout: () => void;
+  onCheckout: (voucherCode: string, voucherAmount: number) => void;
   products: Product[];
   onAddToCart: (item: any) => void;
 }
@@ -32,23 +32,49 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [isVoucherOpen, setIsVoucherOpen] = useState(false);
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
-  const [voucherError, setVoucherError] = useState(false);
+  const [appliedVoucherAmount, setAppliedVoucherAmount] = useState(0);
+  const [voucherError, setVoucherError] = useState('');
+
+  // Reset voucher state whenever the cart becomes empty (e.g. after order placed)
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setAppliedVoucher(null);
+      setAppliedVoucherAmount(0);
+      setVoucherCode('');
+      setIsVoucherOpen(false);
+      setVoucherError('');
+    }
+  }, [cartItems.length]);
+  const [checkVoucher, { isLoading: isCheckingVoucher }] = useCheckVoucherMutation();
   const { data: suggestiveItems = [] } = useGetSuggestiveItemsQuery(
     { city: location.city, area: location.area },
     { skip: !isOpen },
   );
 
-  // Calculate Totals
+  // Calculate Totals — matching Cordova logic:
+  // Prices are tax-inclusive (GST is embedded in the product prices).
+  // Tax is extracted purely for breakdown display, NOT added on top.
   const subtotal = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }, [cartItems]);
-  
-  const tax = Math.round(subtotal * location.deliveryTax);
-  const deliveryFee = location.deliveryFee;
-  
-  // Voucher Logic (Mock)
-  const discount = appliedVoucher ? 250 : 0;
-  const total = Math.max(0, subtotal + tax + deliveryFee - discount);
+
+  // For pickup orders delivery fee is always 0 (Cordova: appDeliveryFeeCurrent = 0 for Pickup)
+  const deliveryFee = location.orderType === 'pickup' ? 0 : location.deliveryFee;
+
+  // Voucher discount applied before totalling (matching Cordova: totalPc = totalPc - vouch)
+  const discount = appliedVoucherAmount;
+
+  // Effective cart value after voucher discount
+  const effectiveSubtotal = Math.max(0, subtotal - discount);
+
+  // GST breakdown (informational — tax is already included in prices, not added on top)
+  // Normalize: API returns decimal (0.15) but old persisted state may store whole number (15)
+  const taxRate = location.deliveryTax >= 1 ? location.deliveryTax / 100 : location.deliveryTax;
+  const taxBreakdown = Math.round(effectiveSubtotal * taxRate);
+
+
+  // Total payable = food total (tax-inclusive) + delivery fee
+  const total = effectiveSubtotal + deliveryFee;
 
   // Filter out already-in-cart items from the API suggestive list
   const visibleSuggestive = useMemo(() => {
@@ -56,15 +82,47 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     return suggestiveItems.filter(s => !cartItemIds.has(s.itemId));
   }, [suggestiveItems, cartItems]);
 
-  const handleApplyVoucher = () => {
-    if (voucherCode.trim().length > 0) {
-      setAppliedVoucher(voucherCode);
-      setIsVoucherOpen(false);
-      setVoucherError(false);
-    } else {
-      setVoucherError(true);
+  const handleApplyVoucher = async () => {
+    const code = voucherCode.trim();
+    if (!code) { setVoucherError('Please enter a voucher code.'); return; }
+    setVoucherError('');
+    const cartData = cartItems.map(i => ({
+      ItemID: i.productId,
+      ProductName: i.name,
+      Quantity: i.quantity,
+      Price: i.price,
+      TotalProductPrice: i.price * i.quantity,
+      options: i.selectedOptions
+        ? Object.values(i.selectedOptions).flat().map(o => ({ OptionName: o.name, Price: o.price }))
+        : [],
+    }));
+    const locationData = {
+      ordertype: location.orderType === 'pickup' ? 'Pickup' : 'Delivery',
+      city: location.city,
+      area: location.area,
+      outlet: location.outlet ?? null,
+    };
+    try {
+      const result = await checkVoucher({ voucherCode: code, locationData, cartData }).unwrap();
+      if (result.valid) {
+        setAppliedVoucher(code);
+        setAppliedVoucherAmount(result.amount);
+        setIsVoucherOpen(false);
+        setVoucherCode('');
+      } else {
+        setVoucherError(result.message ?? 'Invalid voucher code.');
+      }
+    } catch {
+      setVoucherError('Could not validate voucher. Please try again.');
     }
   };
+
+  // Minimum order enforcement — Cordova: allowOrder = totalPrice >= minDelivery
+  // For pickup, Cordova hardcodes minDelivery = 49
+  const minDelivery = location.orderType === 'pickup'
+    ? 49
+    : cartItems.reduce((max, i) => Math.max(max, i.minimumDelivery ?? 0), 0);
+  const allowOrder = cartItems.length === 0 || effectiveSubtotal >= minDelivery;
 
   const handleQuickAdd = (item: SuggestiveItem) => {
     onAddToCart({
@@ -231,62 +289,82 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                 <span className="text-[10px] text-green-500 font-bold">Coupon Applied</span>
                             </div>
                         </div>
-                        <button onClick={() => setAppliedVoucher(null)} className="text-xs text-neutral-500 hover:text-white underline">Remove</button>
+                        <button onClick={() => { setAppliedVoucher(null); setAppliedVoucherAmount(0); }} className="text-xs text-neutral-500 hover:text-white underline">Remove</button>
                     </div>
                 ) : (
-                    <div className="p-2 flex gap-2 animate-in slide-in-from-top-2">
-                        <input 
-                            type="text" 
-                            autoFocus
-                            placeholder="Enter Code" 
-                            className={`flex-1 bg-[#1a1a1a] border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500 uppercase placeholder:normal-case ${voucherError ? 'border-red-500' : 'border-white/10'}`}
-                            value={voucherCode}
-                            onChange={(e) => setVoucherCode(e.target.value)}
-                        />
-                        <button 
-                            onClick={handleApplyVoucher}
-                            className="bg-white text-black font-bold px-4 rounded-lg text-sm hover:bg-neutral-200 transition-colors"
-                        >
-                            Apply
-                        </button>
-                        <button 
-                            onClick={() => { setIsVoucherOpen(false); setVoucherError(false); }}
-                            className="p-2 text-neutral-500 hover:text-white"
-                        >
-                            <X size={18} />
-                        </button>
+                    <div className="p-2 flex flex-col gap-2 animate-in slide-in-from-top-2">
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                autoFocus
+                                placeholder="Enter Code" 
+                                className={`flex-1 bg-[#1a1a1a] border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500 uppercase placeholder:normal-case ${voucherError ? 'border-red-500' : 'border-white/10'}`}
+                                value={voucherCode}
+                                onChange={(e) => { setVoucherCode(e.target.value); if (voucherError) setVoucherError(''); }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
+                            />
+                            <button 
+                                onClick={handleApplyVoucher}
+                                disabled={isCheckingVoucher}
+                                className="bg-white text-black font-bold px-4 rounded-lg text-sm hover:bg-neutral-200 transition-colors disabled:opacity-60 flex items-center gap-1"
+                            >
+                                {isCheckingVoucher ? <Loader2 size={14} className="animate-spin" /> : 'Apply'}
+                            </button>
+                            <button 
+                                onClick={() => { setIsVoucherOpen(false); setVoucherError(''); }}
+                                className="p-2 text-neutral-500 hover:text-white"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        {voucherError && (
+                            <div className="flex items-center gap-1.5 text-red-400 text-xs px-1">
+                                <AlertCircle size={12} />
+                                <span>{voucherError}</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-neutral-400">
-                <span>Subtotal</span>
+                <span>Items Total</span>
                 <span>Rs. {subtotal}</span>
-              </div>
-              <div className="flex justify-between text-neutral-400">
-                <span>Tax (16%)</span>
-                <span>Rs. {tax}</span>
-              </div>
-              <div className="flex justify-between text-neutral-400">
-                <span>Delivery Fee</span>
-                <span>Rs. {deliveryFee}</span>
               </div>
               {appliedVoucher && (
                   <div className="flex justify-between text-green-500 font-bold animate-in slide-in-from-right">
-                    <span>Voucher Discount</span>
+                    <span>Voucher ({appliedVoucher})</span>
                     <span>- Rs. {discount}</span>
                   </div>
               )}
+              {taxRate > 0 && (
+                <div className="flex justify-between text-neutral-500 text-xs">
+                  <span>Incl. GST ({Math.round(taxRate * 100)}%)</span>
+                  <span>Rs. {taxBreakdown}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-neutral-400">
+                <span>Delivery Fee</span>
+                <span>{deliveryFee > 0 ? `Rs. ${deliveryFee}` : 'Free'}</span>
+              </div>
               <div className="flex justify-between items-end text-white pt-3 border-t border-white/10 mt-2">
                 <span className="font-medium text-neutral-400 uppercase tracking-widest text-[10px] font-black">Total Payable</span>
                 <span className="font-black text-2xl text-yellow-500">Rs. {total}</span>
               </div>
             </div>
 
+            {!allowOrder && cartItems.length > 0 && (
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-xs font-bold">
+                <AlertCircle size={14} className="shrink-0" />
+                <span>Minimum order of Rs. {minDelivery} required. Add more items to proceed.</span>
+              </div>
+            )}
+
             <button 
-                onClick={onCheckout}
-                className="w-full bg-yellow-500 text-white font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all hover:scale-[1.01] shadow-[0_4px_20px_rgba(234,179,8,0.2)]"
+                onClick={() => onCheckout(appliedVoucher ?? '', appliedVoucherAmount)}
+                disabled={!allowOrder}
+                className="w-full bg-yellow-500 text-white font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all hover:scale-[1.01] shadow-[0_4px_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-yellow-500"
             >
               <span>CHECKOUT</span>
               <ArrowRight size={20} strokeWidth={3} />

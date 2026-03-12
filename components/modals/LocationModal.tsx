@@ -112,10 +112,14 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
     if (mode === 'delivery') setArea(draftArea);
     else setOutlet(draftOutlet, draftOutletId);
 
-    // Store delivery fee + tax from the selected city
+    // Store delivery fee + tax from the selected city.
+    // For pickup orders, delivery fee is always 0 (matching Cordova: appDeliveryFeeCurrent = 0 for Pickup).
     const cityData = cities.find(c => c.name === draftCity);
     if (cityData) {
-      setDeliveryFees(cityData.deliveryFees, cityData.deliveryTax);
+      setDeliveryFees(
+        mode === 'pickup' ? 0 : cityData.deliveryFees,
+        cityData.deliveryTax,
+      );
     }
   };
 

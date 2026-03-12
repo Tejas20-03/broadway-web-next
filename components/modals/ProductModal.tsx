@@ -61,10 +61,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
     ?? resolvedProduct.optionGroups
     ?? [];
 
-  // Price = selected size price (or basePrice) + sum of all selected option prices
-  const basePrice = selectedSize?.price ?? resolvedProduct.basePrice ?? 0;
+  // Price = selected size price (or basePrice) + sum of all selected option prices.
+  // Use DeliveryPrice for delivery orders, TakeAwayPrice for pickup — matching Cordova.
+  const isPickup = location.orderType === 'pickup';
+  const baseSizePrice = isPickup
+    ? (selectedSize?.takeAwayPrice ?? selectedSize?.price ?? resolvedProduct.basePrice ?? 0)
+    : (selectedSize?.price ?? resolvedProduct.basePrice ?? 0);
   const optionsPrice = Object.values(selectedOptions).flat().reduce((sum, opt) => sum + (opt.price ?? 0), 0);
-  const unitPrice = basePrice + optionsPrice;
+  const unitPrice = baseSizePrice + optionsPrice;
   const totalPrice = unitPrice * quantity;
 
   const leftImage = resolvedProduct.image;
@@ -72,6 +76,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   // Badge labels for left panel
   const sizeLabel = selectedSize?.label ?? '';
   const firstGroupFirstOption = Object.values(selectedOptions)[0]?.[0]?.name ?? '';
+
+  // Hide the size picker when there is only one size or its label is '-'
+  // (auto-selected by useEffect — user has nothing to choose)
+  const isSingleOrDashSize =
+    !resolvedProduct.sizes ||
+    resolvedProduct.sizes.length === 0 ||
+    resolvedProduct.sizes.length === 1 ||
+    resolvedProduct.sizes.every(s => s.label === '-');
 
   const toggleOption = (groupId: string, option: ProductOption, maxSelection: number) => {
     setSelectedOptions(prev => {
@@ -91,14 +103,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   };
 
   const handleAddToCart = () => {
+    // Build groupId → groupName map so the order payload can send group names (not IDs)
+    const groupNames: Record<string, string> = {};
+    activeGroups.forEach(g => { groupNames[g.id] = g.name; });
     onAddToCart({
       productId: resolvedProduct.id,
       name: resolvedProduct.name,
       image: resolvedProduct.image,
       price: unitPrice,
       quantity,
+      category: resolvedProduct.category,
       selectedSize: selectedSize ? { id: selectedSize.id, label: selectedSize.label } : undefined,
       selectedOptions,
+      selectedOptionGroupNames: groupNames,
+      minimumDelivery: resolvedProduct.minimumDelivery,
     });
     onClose();
   };
@@ -169,8 +187,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
             ) : (
               <div className="p-5 md:p-8 space-y-8 pb-32">
 
-                {/* SIZE SECTION */}
-                {resolvedProduct.sizes && resolvedProduct.sizes.length > 0 && (
+                {/* SIZE SECTION — hidden when there is only one size or label is "-" */}
+                {resolvedProduct.sizes && resolvedProduct.sizes.length > 0 && !isSingleOrDashSize && (
                   <section>
                     <div className="flex items-center gap-2 mb-4">
                       <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-yellow-500 text-white flex items-center justify-center font-bold text-[10px] md:text-xs">1</span>
@@ -202,7 +220,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
 
                 {/* DYNAMIC OPTION GROUPS */}
                 {activeGroups.map((group, groupIdx) => {
-                  const stepNum = (resolvedProduct.sizes && resolvedProduct.sizes.length > 0 ? 2 : 1) + groupIdx;
+                  const stepNum = (!isSingleOrDashSize && resolvedProduct.sizes && resolvedProduct.sizes.length > 0 ? 2 : 1) + groupIdx;
                   const isMulti = group.maxSelection !== 1;
                   const currentSelected = selectedOptions[group.id] ?? [];
                   const hasImages = group.options.some(o => o.image);

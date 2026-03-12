@@ -1,8 +1,9 @@
 export interface ProductSize {
   id: string;
   label: string;
-  price: number;
-  basePrice?: number;
+  price: number;         // delivery price (or discounted delivery price)
+  takeAwayPrice?: number; // pickup/takeaway price (may differ from delivery)
+  basePrice?: number;    // undiscounted base price
   image?: string;
 }
 
@@ -25,8 +26,10 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  basePrice: number; 
+  basePrice: number;       // takeaway price (or discounted price) — primary display price
+  deliveryBasePrice?: number; // delivery price when different from takeaway price
   originalPrice?: number;
+  minimumDelivery?: number;   // minimum order amount required for this product
   image: string;
   category: string;
   tags?: string[];
@@ -52,8 +55,12 @@ export interface CartItem {
   image: string;
   price: number;
   quantity: number;
+  category?: string;         // CategoryName sent in orderdata (from product.category)
   selectedSize?: ProductSize;
   selectedOptions?: { [groupId: string]: ProductOption[] };
+  selectedOptionGroupNames?: { [groupId: string]: string }; // groupId → groupName for OptionGroupName in payload
+  minimumDelivery?: number; // min order amount required for this item (from API MinimumDelivery)
+  discountGiven?: number;   // per-item discount (ActualPrice - sellingPrice), for display
 }
 
 // --- Location / Ordering ---

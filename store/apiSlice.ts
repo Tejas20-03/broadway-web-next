@@ -22,6 +22,9 @@ import {
   verifyCode,
   placeOrder,
   fetchGeoCodeArea,
+  checkVoucher,
+  fetchOrderStatus,
+  fetchReOrderDetails,
   type City,
   type HotDeal,
   type BirthdayDeal,
@@ -31,6 +34,9 @@ import {
   type SuggestiveItem,
   type OrderPayload,
   type GeoCodeResult,
+  type VoucherResult,
+  type OrderStatus,
+  type ReOrderDetails,
 } from '../services/api';
 
 type CustomError = { status: 'CUSTOM_ERROR'; error: string };
@@ -177,7 +183,7 @@ export const broadwayApi = createApi({
       invalidatesTags: ['Customer'],
     }),
 
-    placeOrder: builder.mutation<{ success: boolean; orderId?: string; message?: string }, OrderPayload>({
+    placeOrder: builder.mutation<{ success: boolean; orderId?: string; encOrderId?: string; deliveryTime?: string; orderAmount?: number; paymentUrl?: string; message?: string }, OrderPayload>({
       queryFn: async (payload) => {
         try { return { data: await placeOrder(payload) }; } catch (e) { return err(e); }
       },
@@ -196,6 +202,33 @@ export const broadwayApi = createApi({
         try { return { data: await deleteAccount(phone) }; } catch (e) { return err(e); }
       },
       invalidatesTags: ['Customer', 'Orders'],
+    }),
+
+    // ── Voucher (CheckVoucherV2) ──────────────────────────────────────────────
+    checkVoucher: builder.mutation<VoucherResult, {
+      voucherCode: string;
+      locationData: { ordertype: string | null; city: string | null; area: string | null; outlet: string | null };
+      cartData: any[];
+    }>({
+      queryFn: async ({ voucherCode, locationData, cartData }) => {
+        try { return { data: await checkVoucher(voucherCode, locationData, cartData) }; } catch (e) { return err(e); }
+      },
+    }),
+
+    // ── Live order status polling (CheckOrderStatusV1) ────────────────────────
+    getOrderStatus: builder.query<OrderStatus | null, string>({
+      queryFn: async (orderId) => {
+        try { return { data: await fetchOrderStatus(orderId) }; } catch (e) { return err(e); }
+      },
+      keepUnusedDataFor: 0,
+    }),
+
+    // ── ReOrder details (ReOrderV1) ───────────────────────────────────────────
+    getReOrderDetails: builder.query<ReOrderDetails | null, string>({
+      queryFn: async (orderId) => {
+        try { return { data: await fetchReOrderDetails(orderId) }; } catch (e) { return err(e); }
+      },
+      keepUnusedDataFor: 60,
     }),
   }),
 });
@@ -223,4 +256,8 @@ export const {
   useUpdateCustomerInfoMutation,
   useDeleteAccountMutation,
   useLazyGetGeoCodeAreaQuery,
+  useCheckVoucherMutation,
+  useGetOrderStatusQuery,
+  useLazyGetOrderStatusQuery,
+  useGetReOrderDetailsQuery,
 } = broadwayApi;
