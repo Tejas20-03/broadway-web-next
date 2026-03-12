@@ -45,8 +45,6 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   isOpen, onClose,
   orderId, encOrderId, orderAddress, orderType = 'delivery',
 }) => {
-  const isPickup = orderType === 'pickup';
-
   // Poll live status every 2 s, matching Cordova's setInterval(checkDeliveryStatus, 2000)
   const { data: orderStatus } = useGetOrderStatusQuery(encOrderId ?? '', {
     skip: !encOrderId,
@@ -57,6 +55,11 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   const { data: reOrderData } = useGetReOrderDetailsQuery(encOrderId ?? '', {
     skip: !encOrderId,
   });
+
+  // Use live reOrderData.orderType when available; fall back to prop for initial render
+  const isPickup = reOrderData
+    ? reOrderData.orderType.toLowerCase() === 'pickup'
+    : orderType === 'pickup';
 
   const dispatch = useAppDispatch();
   const [toastMsg, setToastMsg] = useState('');
@@ -271,7 +274,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                 </div>
 
                 {/* Rider Info (delivery only, shown when API provides it) */}
-                {!isPickup && orderStatus?.riderName && (
+                {!isPickup && (reOrderData?.riderName || orderStatus?.riderName) && (
                     <div className="bg-[#121212] border border-white/5 rounded-3xl p-6 md:p-8">
                         <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-4">Your Rider</h3>
                         <div className="flex items-center gap-4">
@@ -279,14 +282,14 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                                 <Bike size={24} className="text-yellow-500" />
                             </div>
                             <div className="flex-1">
-                                <p className="text-white font-bold text-lg">{orderStatus.riderName}</p>
-                                {orderStatus.riderPhone && (
+                                <p className="text-white font-bold text-lg">{reOrderData?.riderName || orderStatus?.riderName}</p>
+                                {(reOrderData?.riderPhone || orderStatus?.riderPhone) && (
                                     <a
-                                        href={`tel:${orderStatus.riderPhone}`}
+                                        href={`tel:${reOrderData?.riderPhone || orderStatus?.riderPhone}`}
                                         className="flex items-center gap-1.5 text-yellow-500 text-sm font-bold hover:underline mt-1"
                                     >
                                         <Phone size={14} />
-                                        {orderStatus.riderPhone}
+                                        {reOrderData?.riderPhone || orderStatus?.riderPhone}
                                     </a>
                                 )}
                             </div>
@@ -315,7 +318,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                             </div>
                             <div>
                                 <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Destination</p>
-                                <p className="text-white font-medium text-sm">{orderAddress || '—'}</p>
+                                <p className="text-white font-medium text-sm">{reOrderData?.deliveryAddress || orderAddress || '—'}</p>
                             </div>
                           </div>
                         )}
@@ -392,30 +395,56 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                         )}
                     </div>
 
-                    <div className="p-6 bg-[#0a0a0a] border-t border-white/5 space-y-2">
-                        <div className="flex justify-between text-neutral-500 text-xs">
-                            <span>Items Total</span>
-                            <span>{reOrderData ? `Rs. ${reOrderData.subTotal}` : '—'}</span>
-                        </div>
-                        {reOrderData && reOrderData.taxAmount > 0 && (
-                            <div className="flex justify-between text-neutral-600 text-[10px]">
-                                <span>Incl. GST{reOrderData.tax ? ` (${reOrderData.tax}%)` : ''}</span>
-                                <span>Rs. {reOrderData.taxAmount}</span>
-                            </div>
-                        )}
-                        {reOrderData && reOrderData.deliveryFee > 0 && (
+                    {reOrderData && (() => {
+                        const itemsTotal = reOrderData.products.reduce(
+                            (s: number, i: any) => s + parseFloat(i.TotalProductPrice || '0'), 0
+                        );
+                        const totalDiscount = reOrderData.products.reduce(
+                            (s: number, i: any) => s + parseFloat(i.discountGiven || '0'), 0
+                        );
+                        return (
+                        <div className="p-6 bg-[#0a0a0a] border-t border-white/5 space-y-2">
                             <div className="flex justify-between text-neutral-500 text-xs">
-                                <span>Delivery Fee</span>
-                                <span>Rs. {reOrderData.deliveryFee}</span>
+                                <span>Items Total</span>
+                                <span>Rs. {itemsTotal}</span>
                             </div>
-                        )}
-                        <div className="flex justify-between items-end pt-2 border-t border-white/5">
-                            <span className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
-                            <span className="text-xl font-black text-yellow-500">
-                                {reOrderData ? `Rs. ${reOrderData.orderAmount}` : '—'}
-                            </span>
+                            {totalDiscount > 0 && (
+                                <div className="flex justify-between text-green-500 text-xs font-bold">
+                                    <span>Deal Savings</span>
+                                    <span>- Rs. {totalDiscount}</span>
+                                </div>
+                            )}
+                            {reOrderData.taxAmount > 0 && (
+                                <div className="flex justify-between text-neutral-600 text-[10px]">
+                                    <span>Incl. GST{reOrderData.tax ? ` (${reOrderData.tax}%)` : ''}</span>
+                                    <span>Rs. {reOrderData.taxAmount}</span>
+                                </div>
+                            )}
+                            {reOrderData.deliveryFee > 0 && (
+                                <div className="flex justify-between text-neutral-500 text-xs">
+                                    <span>Delivery Fee</span>
+                                    <span>Rs. {reOrderData.deliveryFee}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between text-neutral-500 text-xs">
+                                <span>Payment</span>
+                                <span className="text-neutral-300 font-bold">{reOrderData.paymentType}</span>
+                            </div>
+                            <div className="flex justify-between items-end pt-2 border-t border-white/5">
+                                <span className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
+                                <span className="text-xl font-black text-yellow-500">Rs. {reOrderData.orderAmount}</span>
+                            </div>
                         </div>
-                    </div>
+                        );
+                    })()}
+                    {!reOrderData && (
+                        <div className="p-6 bg-[#0a0a0a] border-t border-white/5">
+                            <div className="flex justify-between items-end">
+                                <span className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
+                                <span className="text-xl font-black text-yellow-500">—</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
