@@ -157,25 +157,96 @@ export const fetchPickupOutlets = async (city: string): Promise<Outlet[]> => {
 };
 
 // ---------------------------------------------------------------------------
+// All outlets (used by live feedback flow)
+// ---------------------------------------------------------------------------
+export const fetchAllOutlets = async (): Promise<Outlet[]> => {
+  const data = await apiFetch('BroadwayAPI.aspx?Method=GetAllOutlets');
+  const raw: any[] = Array.isArray(data) ? data : data?.Data || [];
+  return raw.map((o: any, i: number) => ({
+    id: String(o.Id ?? o.ID ?? o.OutletID ?? i),
+    name: String(o.Name ?? o.OutletName ?? ''),
+    address: String(o.address ?? o.Address ?? ''),
+    city: String(o.City ?? ''),
+    mapLink: o.maplink ?? o.MapLink ?? undefined,
+    phone: o.Phone ?? undefined,
+  }));
+};
+
+// ---------------------------------------------------------------------------
 // Blog posts
 // ---------------------------------------------------------------------------
+export const slugifyBlogValue = (value: string): string => {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+
+export const getBlogSlug = (post: Pick<BlogPost, 'id' | 'title' | 'slug'>): string => {
+  if (post.slug && post.slug.trim()) return slugifyBlogValue(post.slug);
+  return slugifyBlogValue(`${post.title}-${post.id}`);
+};
+
 export const fetchBlogPosts = async (): Promise<BlogPost[]> => {
   try {
     const data = await apiFetch('BroadwayAPI.aspx?Method=BlogListing');
     const raw: any[] = Array.isArray(data) ? data : data?.Data || data?.Blogs || [];
-    return raw.map((b: any, i: number) => ({
-      id: b.ID ?? b.BlogID ?? i,
-      title: b.Title ?? b.BlogTitle ?? '',
-      slug: b.Slug ?? b.BlogSlug ?? undefined,
-      excerpt: b.ShortDescription ?? b.Excerpt ?? b.Summary ?? '',
-      image: b.Image ?? b.BlogImage ?? b.CoverImage ?? '',
-      date: b.PublishedDate ?? b.Date ?? '',
-      category: b.Category ?? b.CategoryName ?? 'General',
-      readTime: b.ReadTime ?? undefined,
-    }));
+    return raw.map((b: any, i: number) => {
+      const id = b.ID ?? b.BlogID ?? i;
+      const title = b.Title ?? b.BlogTitle ?? '';
+      const slug = getBlogSlug({
+        id,
+        title,
+        slug: b.Slug ?? b.BlogSlug ?? '',
+      });
+
+      return {
+        id,
+        title,
+        slug,
+        excerpt: b.ShortDescription ?? b.Excerpt ?? b.Summary ?? '',
+        content: b.Description ?? b.LongDescription ?? b.Body ?? undefined,
+        image: b.Image ?? b.BlogImage ?? b.CoverImage ?? '',
+        date: b.PublishedDate ?? b.Date ?? '',
+        category: b.Category ?? b.CategoryName ?? 'General',
+        readTime: b.ReadTime ?? undefined,
+      };
+    });
   } catch {
     return [];
   }
+};
+
+export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null> => {
+  try {
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=GetBlogBySlug&BlogSlug=${encodeURIComponent(slug)}`);
+    const raw = data?.Data?.[0] ?? data?.Data ?? data;
+
+    if (raw && (raw.ID || raw.BlogID || raw.Title || raw.BlogTitle)) {
+      const id = raw.ID ?? raw.BlogID ?? slug;
+      const title = raw.Title ?? raw.BlogTitle ?? '';
+      return {
+        id,
+        title,
+        slug: getBlogSlug({ id, title, slug: raw.Slug ?? raw.BlogSlug ?? slug }),
+        excerpt: raw.ShortDescription ?? raw.Excerpt ?? raw.Summary ?? '',
+        content: raw.Description ?? raw.LongDescription ?? raw.Body ?? undefined,
+        image: raw.Image ?? raw.BlogImage ?? raw.CoverImage ?? '',
+        date: raw.PublishedDate ?? raw.Date ?? '',
+        category: raw.Category ?? raw.CategoryName ?? 'General',
+        readTime: raw.ReadTime ?? undefined,
+      };
+    }
+  } catch {
+    /* fall through to listing fallback */
+  }
+
+  const posts = await fetchBlogPosts();
+  const normalized = slugifyBlogValue(slug);
+  return posts.find((post) => getBlogSlug(post) === normalized) ?? null;
 };
 
 // ---------------------------------------------------------------------------
@@ -483,21 +554,32 @@ export interface HotDeal {
   stockPercent: number;
 }
 
-export const fetchHotDeals = async (): Promise<HotDeal[]> => {
+export const fetchHotDeals = async (city: string = 'Karachi'): Promise<HotDeal[]> => {
   try {
-    const data = await apiFetch('BroadwayAPI.aspx?Method=GetHotDeals');
-    const raw: any[] = Array.isArray(data) ? data : data?.Data || data?.Deals || [];
-    if (raw.length > 0) {
-      return raw.map((d: any, i: number) => ({
-        id: String(d.ID ?? d.DealID ?? i),
-        name: d.Name ?? d.DealName ?? 'Flash Deal',
-        description: d.Description ?? d.Details ?? '',
-        originalPrice: parseFloat(d.OriginalPrice ?? d.ActualPrice ?? '0'),
-        dealPrice: parseFloat(d.DealPrice ?? d.Price ?? '0'),
-        image: d.Image ?? d.DealImage ?? '',
-        remainingSeconds: parseInt(d.RemainingSeconds ?? d.TimerSeconds ?? '3600'),
-        stockPercent: parseInt(d.StockPercent ?? d.Availability ?? '50'),
-      }));
+    const url = `https://bwapi.broadwaypizza.com.pk/BroadwayAPI.aspx?Method=GetMenu&Platform=Web&City=${encodeURIComponent(city || 'Karachi')}&Featured=true`;
+    const res = await fetch(url, { next: { revalidate: 60 } } as RequestInit);
+    const data = await res.json();
+
+    const categories: any[] = data?.Data?.NestedMenuForMobile?.[0]?.MenuCategoryList ?? [];
+    const items: any[] = categories.flatMap((cat: any) => cat?.MenuItemsList ?? []);
+
+    if (items.length > 0) {
+      return items.map((d: any, i: number) => {
+        const dealPrice = parseFloat(String(d.DiscountedPrice ?? d.TakeawayPrice ?? d.MinDeliveryPrice ?? 0));
+        const fallbackOriginal = dealPrice + parseFloat(String(d.Discount ?? 0));
+        const originalPrice = parseFloat(String(d.MinDeliveryPrice ?? d.TakeawayPrice ?? fallbackOriginal ?? dealPrice));
+
+        return {
+          id: String(d.ID ?? d.ItemID ?? i),
+          name: d.Name ?? d.DealName ?? `Featured Deal ${i + 1}`,
+          description: d.Description ?? d.SpecialDealText ?? d.Details ?? '',
+          originalPrice: Number.isFinite(originalPrice) ? originalPrice : dealPrice,
+          dealPrice: Number.isFinite(dealPrice) ? dealPrice : 0,
+          image: d.ImageBase64 ?? d.Image ?? d.DealImage ?? d.ItemImage ?? '',
+          remainingSeconds: parseInt(d.RemainingSeconds ?? d.TimerSeconds ?? '3600', 10),
+          stockPercent: parseInt(d.StockPercent ?? d.Availability ?? '50', 10),
+        };
+      });
     }
   } catch {
     /* fall through to static */
@@ -608,6 +690,52 @@ export const deleteAccount = async (phone: string): Promise<boolean> => {
 };
 
 // ---------------------------------------------------------------------------
+// Saved Addresses (GetAddress / DeleteAddress)
+// ---------------------------------------------------------------------------
+export interface SavedAddress {
+  id: string;
+  address: string;
+  area: string;
+  city: string;
+  nearestLandmark: string;
+  gst: number;
+  latitude: string;
+  longitude: string;
+  type: string;
+}
+
+export const fetchSavedAddresses = async (phone: string): Promise<SavedAddress[]> => {
+  try {
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=GetAddress&CustomerMobile=${encodeURIComponent(phone)}`);
+    if (String(data?.ResponseType) !== '1' || !Array.isArray(data?.Data)) return [];
+
+    return data.Data.map((a: any, i: number) => ({
+      id: String(a.ID ?? i),
+      address: String(a.Address ?? ''),
+      area: String(a.Area ?? ''),
+      city: String(a.City ?? ''),
+      nearestLandmark: String(a.NearestLandmark ?? ''),
+      gst: parseFloat(a.GST ?? a.delivery_tax ?? '0') || 0,
+      latitude: String(a.Latitude ?? ''),
+      longitude: String(a.Longitude ?? ''),
+      type: String(a.Type ?? ''),
+    }));
+  } catch {
+    return [];
+  }
+};
+
+export const deleteSavedAddress = async (addressId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=DeleteAddress&AddressID=${encodeURIComponent(addressId)}`);
+    const success = String(data?.responseType ?? data?.ResponseType) === '1';
+    return { success, message: data?.message ?? data?.Message };
+  } catch {
+    return { success: false, message: 'Could not delete address.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Pending Orders (track active orders)
 // ---------------------------------------------------------------------------
 export interface PendingOrder {
@@ -702,8 +830,10 @@ export const fetchProductOptions = async (
     };
 
     // Single entry with empty/placeholder Size = no size selector, groups at item level
+    // '-' and '.' are both used by the API as placeholder values meaning "no real size"
+    const PLACEHOLDER_SIZES = ['.', '-'];
     const noSizeItem =
-      rawSizes.length === 1 && (!rawSizes[0].Size || rawSizes[0].Size.trim() === '.');
+      rawSizes.length === 1 && (!rawSizes[0].Size || PLACEHOLDER_SIZES.includes(rawSizes[0].Size.trim()));
     if (noSizeItem) {
       return {
         sizes: [],
@@ -767,6 +897,219 @@ export const checkVoucher = async (
     return { valid: false, amount: 0, code: voucherCode, message: data?.Message ?? 'Could not validate voucher.' };
   } catch {
     return { valid: false, amount: 0, code: voucherCode, message: 'Network error. Please try again.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Contact Us: submit contact form
+// Live parity: POST BroadwayAPI.aspx?Method=ContactUs with JSON { Name, Phone, Remarks }
+// ---------------------------------------------------------------------------
+export interface ContactUsPayload {
+  Name: string;
+  Phone?: string;
+  Remarks?: string;
+}
+
+export const submitContactUs = async (
+  payload: ContactUsPayload,
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const res = await fetch(`${BASE_URL}/BroadwayAPI.aspx?Method=ContactUs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    const ok = Boolean(data?.responseType ?? data?.ResponseType);
+    if (ok) {
+      return {
+        success: true,
+        message:
+          data?.message ??
+          data?.Message ??
+          'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+      };
+    }
+    return {
+      success: false,
+      message: data?.message ?? data?.Message ?? 'Could not submit your message. Please try again.',
+    };
+  } catch {
+    return { success: false, message: 'Network error. Please check your connection and try again.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Birthday Event: submit birthday inquiry form
+// Live parity: POST BroadwayAPI.aspx?Method=AddBirthdayEvent
+// ---------------------------------------------------------------------------
+export interface BirthdayEventPayload {
+  birthday_deal: string;
+  Name: string;
+  Phone: string;
+  Email: string;
+  NoofPerson: string;
+  date_time: string;
+  location: string;
+  Instructions?: string;
+}
+
+export const submitBirthdayEvent = async (
+  payload: BirthdayEventPayload,
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const res = await fetch(`${BASE_URL}/BroadwayAPI.aspx?Method=AddBirthdayEvent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    const ok = Boolean(data?.responseType ?? data?.ResponseType);
+    if (ok) {
+      return {
+        success: true,
+        message:
+          data?.message ??
+          data?.Message ??
+          'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+      };
+    }
+    return {
+      success: false,
+      message: data?.message ?? data?.Message ?? 'Could not submit your birthday inquiry. Please try again.',
+    };
+  } catch {
+    return { success: false, message: 'Network error. Please check your connection and try again.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Catering Event: submit catering lead form
+// Live parity: POST BroadwayAPI.aspx?Method=AddCateringEvent
+// ---------------------------------------------------------------------------
+export interface CateringEventPayload {
+  Name: string;
+  Phone: string;
+  Email: string;
+  NoofPerson: string;
+  date_time: string;
+  Location: string;
+  Instructions?: string;
+}
+
+export const submitCateringEvent = async (
+  payload: CateringEventPayload,
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const res = await fetch(`${BASE_URL}/BroadwayAPI.aspx?Method=AddCateringEvent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    const ok = Boolean(data?.responseType ?? data?.ResponseType);
+    if (ok) {
+      return {
+        success: true,
+        message:
+          data?.message ??
+          data?.Message ??
+          'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+      };
+    }
+    return {
+      success: false,
+      message: data?.message ?? data?.Message ?? 'Could not submit your catering request. Please try again.',
+    };
+  } catch {
+    return { success: false, message: 'Network error. Please check your connection and try again.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Corporate Event: submit corporate lead form
+// Live parity: POST BroadwayAPI.aspx?Method=AddCorporateEvent
+// ---------------------------------------------------------------------------
+export interface CorporateEventPayload {
+  Name: string;
+  Phone: string;
+  Email: string;
+  Organization: string;
+  Query?: string;
+}
+
+export const submitCorporateEvent = async (
+  payload: CorporateEventPayload,
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const res = await fetch(`${BASE_URL}/BroadwayAPI.aspx?Method=AddCorporateEvent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    const ok = Boolean(data?.responseType ?? data?.ResponseType);
+    if (ok) {
+      return {
+        success: true,
+        message:
+          data?.message ??
+          data?.Message ??
+          'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+      };
+    }
+    return {
+      success: false,
+      message: data?.message ?? data?.Message ?? 'Could not submit your corporate request. Please try again.',
+    };
+  } catch {
+    return { success: false, message: 'Network error. Please check your connection and try again.' };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Franchise Request: submit franchise lead form
+// Live parity: POST BroadwayAPI.aspx?Method=franchiserequestv1
+// ---------------------------------------------------------------------------
+export interface FranchiseRequestPayload {
+  firstName: string;
+  contact?: string;
+  Email?: string;
+  occupation: string;
+  city: string;
+  own_other_franchises: string;
+  own_property?: 'Yes' | 'No' | string;
+  hearAbout?: string;
+  totalLiquidAssets?: string;
+  regions: string;
+}
+
+export const submitFranchiseRequest = async (
+  payload: FranchiseRequestPayload,
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const res = await fetch(`${BASE_URL}/BroadwayAPI.aspx?Method=franchiserequestv1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    const ok = Boolean(data?.responseType ?? data?.ResponseType);
+    if (ok) {
+      return {
+        success: true,
+        message:
+          data?.message ??
+          data?.Message ??
+          'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+      };
+    }
+    return {
+      success: false,
+      message: data?.message ?? data?.Message ?? 'Could not submit your franchise request. Please try again.',
+    };
+  } catch {
+    return { success: false, message: 'Network error. Please check your connection and try again.' };
   }
 };
 

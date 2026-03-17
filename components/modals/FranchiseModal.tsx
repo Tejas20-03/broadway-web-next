@@ -1,7 +1,8 @@
 ﻿'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Store, ArrowRight, Building2, Briefcase } from 'lucide-react';
+import { useSubmitFranchiseRequestMutation } from '@/store/apiSlice';
 
 interface FranchiseModalProps {
   isOpen: boolean;
@@ -9,6 +10,64 @@ interface FranchiseModalProps {
 }
 
 export const FranchiseModal: React.FC<FranchiseModalProps> = ({ isOpen, onClose }) => {
+    const [submitFranchiseRequest, { isLoading }] = useSubmitFranchiseRequestMutation();
+
+    const [firstName, setFirstName] = useState('');
+    const [contact, setContact] = useState('');
+    const [email, setEmail] = useState('');
+    const [occupation, setOccupation] = useState('');
+    const [city, setCity] = useState('');
+    const [ownOtherFranchises, setOwnOtherFranchises] = useState('');
+    const [ownProperty, setOwnProperty] = useState('');
+    const [hearAbout, setHearAbout] = useState('');
+    const [totalLiquidAssets, setTotalLiquidAssets] = useState('PKR20 million');
+    const [regions, setRegions] = useState('');
+    const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+    const resetForm = () => {
+        setFirstName('');
+        setContact('');
+        setEmail('');
+        setOccupation('');
+        setCity('');
+        setOwnOtherFranchises('');
+        setOwnProperty('');
+        setHearAbout('');
+        setTotalLiquidAssets('PKR20 million');
+        setRegions('');
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus(null);
+
+        if (!firstName.trim() || !occupation.trim() || !city.trim() || !ownOtherFranchises.trim() || !regions.trim()) {
+            setStatus({ ok: false, text: 'Please type all the required fields.' });
+            return;
+        }
+
+        const res = await submitFranchiseRequest({
+            firstName: firstName.trim(),
+            contact: contact.trim(),
+            Email: email.trim(),
+            occupation: occupation.trim(),
+            city: city.trim(),
+            own_other_franchises: ownOtherFranchises.trim(),
+            own_property: ownProperty,
+            hearAbout,
+            totalLiquidAssets,
+            regions: regions.trim(),
+        }).unwrap();
+
+        if (res.success) {
+            resetForm();
+            setStatus({ ok: true, text: res.message ?? 'Your information has been sent to our team, You will get a callback from us to assist you accordingly.' });
+            return;
+        }
+
+        setStatus({ ok: false, text: res.message ?? 'Could not submit your franchise request. Please try again.' });
+    };
+
   if (!isOpen) return null;
 
   return (
@@ -94,27 +153,27 @@ export const FranchiseModal: React.FC<FranchiseModalProps> = ({ isOpen, onClose 
                     <h3 className="text-xl font-bold text-white uppercase tracking-tight mb-2">Franchise Application</h3>
                     <p className="text-neutral-500 text-sm mb-8">Please fill out the form below to express your interest.</p>
 
-                    <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                    <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Personal Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Your Name *</label>
-                                <input type="text" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Full Name" required />
+                                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Full Name" required />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Phone Number *</label>
-                                <input type="tel" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="0300..." required />
+                                <input type="tel" value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="0300..." />
                             </div>
                         </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Email Address *</label>
-                                <input type="email" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="email@example.com" required />
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="email@example.com" />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Current Occupation *</label>
-                                <input type="text" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Business / Job Title" required />
+                                <input type="text" value={occupation} onChange={(e) => setOccupation(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Business / Job Title" required />
                             </div>
                         </div>
 
@@ -122,11 +181,11 @@ export const FranchiseModal: React.FC<FranchiseModalProps> = ({ isOpen, onClose 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Target City *</label>
-                                <input type="text" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Which city?" required />
+                                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Which city?" required />
                             </div>
                              <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Other Franchises? *</label>
-                                <input type="text" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Yes/No (Specify name)" required />
+                                <input type="text" value={ownOtherFranchises} onChange={(e) => setOwnOtherFranchises(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Yes/No (Specify name)" required />
                             </div>
                         </div>
 
@@ -136,13 +195,13 @@ export const FranchiseModal: React.FC<FranchiseModalProps> = ({ isOpen, onClose 
                              <div className="flex gap-4">
                                 <label className="flex items-center gap-2 cursor-pointer group">
                                     <div className="w-5 h-5 rounded-full border border-white/20 group-hover:border-yellow-500 flex items-center justify-center">
-                                        <input type="radio" name="property" className="appearance-none w-2.5 h-2.5 bg-yellow-500 rounded-full opacity-0 checked:opacity-100" />
+                                        <input type="radio" name="property" checked={ownProperty === 'Yes'} onChange={() => setOwnProperty('Yes')} className="appearance-none w-2.5 h-2.5 bg-yellow-500 rounded-full opacity-0 checked:opacity-100" />
                                     </div>
                                     <span className="text-sm text-white">Yes</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer group">
                                     <div className="w-5 h-5 rounded-full border border-white/20 group-hover:border-yellow-500 flex items-center justify-center">
-                                        <input type="radio" name="property" className="appearance-none w-2.5 h-2.5 bg-yellow-500 rounded-full opacity-0 checked:opacity-100" />
+                                        <input type="radio" name="property" checked={ownProperty === 'No'} onChange={() => setOwnProperty('No')} className="appearance-none w-2.5 h-2.5 bg-yellow-500 rounded-full opacity-0 checked:opacity-100" />
                                     </div>
                                     <span className="text-sm text-white">No</span>
                                 </label>
@@ -153,34 +212,47 @@ export const FranchiseModal: React.FC<FranchiseModalProps> = ({ isOpen, onClose 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Investment Capital *</label>
-                                <select className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm appearance-none cursor-pointer">
-                                    <option>PKR 20 Million</option>
-                                    <option>PKR 25 Million</option>
-                                    <option>PKR 30 Million</option>
-                                    <option>PKR 35 Million</option>
-                                    <option>PKR 40 Million</option>
-                                    <option>PKR 45 Million+</option>
+                                                                <select value={totalLiquidAssets} onChange={(e) => setTotalLiquidAssets(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm appearance-none cursor-pointer">
+                                                                        <option value="PKR20 million">PKR20 million</option>
+                                                                        <option value="PKR25 million">PKR25 million</option>
+                                                                        <option value="PKR30 million">PKR30 million</option>
+                                                                        <option value="PKR35 million">PKR35 million</option>
+                                                                        <option value="PKR40 million">PKR40 million</option>
+                                                                        <option value="PKR45 million">PKR45 million</option>
                                 </select>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Heard About Us Via *</label>
-                                <select className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm appearance-none cursor-pointer">
-                                    <option>Facebook</option>
-                                    <option>Instagram</option>
-                                    <option>Google</option>
-                                    <option>Website</option>
-                                    <option>Relative/Friend</option>
-                                    <option>Restaurant Visit</option>
+                                                                <select value={hearAbout} onChange={(e) => setHearAbout(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm appearance-none cursor-pointer">
+                                                                        <option value="">Select</option>
+                                                                        <option value="Email">Facebook</option>
+                                                                        <option value="expo">Instagram</option>
+                                                                        <option value="existing-franchise">Relative</option>
+                                                                        <option value="franchise-broker">Restaurant</option>
+                                                                        <option value="phone">Website</option>
+                                                                        <option value="trade-show">Google</option>
                                 </select>
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
                              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Office Address *</label>
-                             <textarea rows={3} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm resize-none placeholder:text-neutral-700" placeholder="Your office address" required />
+                                                         <textarea rows={3} value={regions} onChange={(e) => setRegions(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm resize-none placeholder:text-neutral-700" placeholder="Your office address" required />
                         </div>
 
-                        <button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-base py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                                                {status && (
+                                                    <div
+                                                        className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                                                            status.ok
+                                                                ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                                                : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                                                        }`}
+                                                    >
+                                                        {status.text}
+                                                    </div>
+                                                )}
+
+                                                <button type="submit" disabled={isLoading} className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black text-base py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
                             <span>Submit Application</span>
                             <ArrowRight size={18} strokeWidth={3} />
                         </button>

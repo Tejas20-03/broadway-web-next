@@ -30,10 +30,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   // Reset UI state and merge options whenever product or fetched options change
   useEffect(() => {
     if (!product) { setResolvedProduct(null); return; }
-    setResolvedProduct({ ...product, ...(optionData ?? {}) });
+    const merged = { ...product, ...(optionData ?? {}) };
+    setResolvedProduct(merged);
     setQuantity(1);
     setSelectedOptions({});
-    setSelectedSize(product.sizes?.[0] ?? null);
+    setSelectedSize(merged.sizes?.[0] ?? null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id, optionData]);
 

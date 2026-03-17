@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { X, Gift, Calendar, Users, MapPin, Check, Phone, Cake, Music, Sparkles } from 'lucide-react';
-import { useGetBirthdayDealsQuery } from '@/store/apiSlice';
+import { useGetBirthdayDealsQuery, useSubmitBirthdayEventMutation } from '@/store/apiSlice';
 
 interface BirthdayModalProps {
   isOpen: boolean;
@@ -12,13 +12,70 @@ interface BirthdayModalProps {
 
 export const BirthdayModal: React.FC<BirthdayModalProps> = ({ isOpen, onClose }) => {
   const { data: deals = [] } = useGetBirthdayDealsQuery(undefined, { skip: !isOpen });
+    const [submitBirthdayEvent, { isLoading }] = useSubmitBirthdayEventMutation();
   const [selectedDeals, setSelectedDeals] = useState<string[]>([]);
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
+    const [noofPerson, setNoofPerson] = useState('');
+    const [dateTime, setDateTime] = useState('');
+    const [location, setLocation] = useState('');
+    const [instructions, setInstructions] = useState('');
+    const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   const toggleDeal = (id: string) => {
     setSelectedDeals(prev =>
       prev.includes(id) ? prev.filter(dealId => dealId !== id) : [...prev, id]
     );
   };
+
+    const resetForm = () => {
+        setSelectedDeals([]);
+        setName('');
+        setPhone('');
+        setEmail('');
+        setNoofPerson('');
+        setDateTime('');
+        setLocation('');
+        setInstructions('');
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus(null);
+
+        if (selectedDeals.length === 0 || !name.trim() || !phone.trim() || !email.trim() || !noofPerson.trim() || !dateTime.trim() || !location.trim()) {
+            setStatus({ ok: false, text: 'Please type all the required fields.' });
+            return;
+        }
+
+        const selectedDealNames = deals
+            .filter((deal) => selectedDeals.includes(deal.id))
+            .map((deal) => deal.name)
+            .join(', ');
+
+        const res = await submitBirthdayEvent({
+            birthday_deal: selectedDealNames,
+            Name: name.trim(),
+            Phone: phone.trim(),
+            Email: email.trim(),
+            NoofPerson: noofPerson.trim(),
+            date_time: dateTime,
+            location: location.trim(),
+            Instructions: instructions.trim(),
+        }).unwrap();
+
+        if (res.success) {
+            resetForm();
+            setStatus({
+                ok: true,
+                text: res.message ?? 'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+            });
+            return;
+        }
+
+        setStatus({ ok: false, text: res.message ?? 'Could not submit your birthday inquiry. Please try again.' });
+    };
 
   if (!isOpen) return null;
 
@@ -179,29 +236,29 @@ export const BirthdayModal: React.FC<BirthdayModalProps> = ({ isOpen, onClose })
                             2. Event Details
                         </h3>
 
-                        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                        <form className="space-y-6" onSubmit={handleSubmit}>
                             
                             {/* Personal Info */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Full Name *</label>
-                                    <input type="text" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Your Name" required />
+                                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Your Name" required />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Phone Number *</label>
-                                    <input type="tel" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="0300..." required />
+                                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="0300..." required />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Email Address *</label>
-                                    <input type="email" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="email@example.com" required />
+                                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="email@example.com" required />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Number of Guests *</label>
                                     <div className="relative">
-                                        <input type="number" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Total Persons" required />
+                                        <input type="number" value={noofPerson} onChange={(e) => setNoofPerson(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="Total Persons" required />
                                         <Users className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600" size={16} />
                                     </div>
                                 </div>
@@ -211,13 +268,13 @@ export const BirthdayModal: React.FC<BirthdayModalProps> = ({ isOpen, onClose })
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Date & Time *</label>
                                     <div className="relative">
-                                        <input type="datetime-local" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700 [color-scheme:dark]" required />
+                                        <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700 [color-scheme:dark]" required />
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Event Location *</label>
                                     <div className="relative">
-                                        <input type="text" className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="e.g. Broadway Pizza Johar Town" required />
+                                        <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm placeholder:text-neutral-700" placeholder="e.g. Broadway Pizza Johar Town" required />
                                         <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600" size={16} />
                                     </div>
                                 </div>
@@ -225,11 +282,23 @@ export const BirthdayModal: React.FC<BirthdayModalProps> = ({ isOpen, onClose })
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Special Instructions</label>
-                                <textarea rows={3} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm resize-none placeholder:text-neutral-700" placeholder="Any specific requirements regarding decor, food, or seating?" />
+                                <textarea rows={3} value={instructions} onChange={(e) => setInstructions(e.target.value)} className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition-colors text-sm resize-none placeholder:text-neutral-700" placeholder="Any specific requirements regarding decor, food, or seating?" />
                             </div>
 
-                            <button className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-black text-base py-4 rounded-xl shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide mt-4">
-                                <span>Submit Inquiry</span>
+                            {status && (
+                                <div
+                                    className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                                        status.ok
+                                            ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                            : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                                    }`}
+                                >
+                                    {status.text}
+                                </div>
+                            )}
+
+                            <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black text-base py-4 rounded-xl shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide mt-4">
+                                <span>{isLoading ? 'Submitting...' : 'Submit Inquiry'}</span>
                                 <Sparkles size={18} strokeWidth={2.5} />
                             </button>
 

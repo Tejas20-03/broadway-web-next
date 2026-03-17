@@ -1,16 +1,18 @@
 ﻿'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MapPin, Bike, ShoppingBag, ChevronRight, Clock, Navigation, Loader2, Phone, ArrowLeft, Search, Check, LocateFixed } from 'lucide-react';
+import { X, MapPin, Bike, ShoppingBag, ChevronRight, Clock, Navigation, Loader2, Phone, ArrowLeft, Search, Check, LocateFixed, Trash2 } from 'lucide-react';
 import { CitySelectionModal } from './CitySelectionModal';
 import { AreaSelectionModal } from './AreaSelectionModal';
+import { OpenStreetMapPickerModal } from './OpenStreetMapPickerModal';
 import { useLocation } from '@/context/LocationContext';
+import { useCart } from '@/context/CartContext';
 import { useUser } from '@/context/UserContext';
 import { useAreas, usePickupOutlets } from '@/hooks/useAreas';
-import { useLazyGetPendingOrdersQuery, useGetCitiesQuery, broadwayApi } from '@/store/apiSlice';
+import { useLazyGetPendingOrdersQuery, useGetCitiesQuery, useGetSavedAddressesQuery, useDeleteSavedAddressMutation, broadwayApi } from '@/store/apiSlice';
 import { useAppDispatch } from '@/store';
 import { userActions } from '@/store/slices/userSlice';
-import type { PendingOrder } from '@/services/api';
+import type { PendingOrder, SavedAddress } from '@/services/api';
 import { fetchGeoCodeArea } from '@/services/api';
 import { OrderType } from '@/types';
 
@@ -23,6 +25,7 @@ interface LocationModalProps {
 
 export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, onOpenLogin, onPendingOrders }) => {
   const { location, setOrderType, setCity, setArea, setOutlet, setDeliveryFees } = useLocation();
+  const { cartItems, clearCart } = useCart();
   const { user } = useUser();
   const dispatch = useAppDispatch();
 
@@ -41,11 +44,18 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
   const [checkingOrders, setCheckingOrders] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
   const [triggerPendingOrders] = useLazyGetPendingOrdersQuery();
+  const [deleteSavedAddress] = useDeleteSavedAddressMutation();
   const phoneRef = useRef<HTMLInputElement>(null);
 
   // Cities for fee lookup
   const { data: cities = [] } = useGetCitiesQuery(undefined, { skip: !isOpen });
+  const { data: savedAddresses = [], isFetching: savedAddressesLoading } = useGetSavedAddressesQuery(
+    user?.phone ?? '',
+    { skip: !isOpen || !user?.phone || mode !== 'delivery' },
+  );
 
   // Reset draft when modal opens to match current context value
   useEffect(() => {
@@ -68,6 +78,21 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
   const { areas, isLoading: areasLoading } = useAreas(mode === 'delivery' ? draftCity : '');
   const { outlets, isLoading: outletsLoading } = usePickupOutlets(mode === 'pickup' ? draftCity : '');
 
+  const applyGeoResult = (result: { city: string; area: string; outletId: string; outletName: string }) => {
+    if (!result.city) {
+      setGeoError('Could not detect your area. Please select manually.');
+      return;
+    }
+
+    setDraftCity(result.city);
+    if (mode === 'delivery' && result.area) {
+      setDraftArea(result.area);
+    } else if (mode === 'pickup' && result.outletId) {
+      setDraftOutlet(result.outletName);
+      setDraftOutletId(result.outletId);
+    }
+  };
+
   const handleGeoLocation = () => {
     if (!navigator.geolocation) {
       setGeoError('Geolocation is not supported by your browser.');
@@ -79,17 +104,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       (pos) => {
         fetchGeoCodeArea(pos.coords.latitude, pos.coords.longitude)
           .then((result) => {
-            if (result.city) {
-              setDraftCity(result.city);
-              if (mode === 'delivery' && result.area) {
-                setDraftArea(result.area);
-              } else if (mode === 'pickup' && result.outletId) {
-                setDraftOutlet(result.outletName);
-                setDraftOutletId(result.outletId);
-              }
-            } else {
-              setGeoError('Could not detect your area. Please select manually.');
-            }
+            applyGeoResult(result);
           })
           .catch(() => {
             setGeoError('Location detection failed. Please select manually.');
@@ -104,6 +119,35 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       },
       { timeout: 10000 },
     );
+  };
+
+  const handleMapSelect = async (lat: number, lng: number) => {
+    setGeoLoading(true);
+    setGeoError('');
+    try {
+      const result = await fetchGeoCodeArea(lat, lng);
+      applyGeoResult(result);
+      setIsMapPickerOpen(false);
+    } catch {
+      setGeoError('Could not map this location to our service area. Please try another pin.');
+    } finally {
+      setGeoLoading(false);
+    }
+  };
+
+  const selectSavedAddress = (addr: SavedAddress) => {
+    setMode('delivery');
+    setDraftCity(addr.city || draftCity);
+    setDraftArea(addr.area || draftArea);
+  };
+
+  const handleDeleteSavedAddress = async (addressId: string) => {
+    setDeletingAddressId(addressId);
+    try {
+      await deleteSavedAddress(addressId).unwrap();
+    } finally {
+      setDeletingAddressId(null);
+    }
   };
 
   const commitLocation = () => {
@@ -123,7 +167,23 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
     }
   };
 
+  const hasLocationChanged = () => {
+    if (location.orderType !== mode) return true;
+    if (location.city !== draftCity) return true;
+    if (mode === 'delivery') return location.area !== draftArea;
+    return location.outletId !== draftOutletId;
+  };
+
   const handleSave = async () => {
+    const locationChanged = hasLocationChanged();
+    if (locationChanged && cartItems.length > 0) {
+      const shouldClear = window.confirm(
+        'Updating your pickup/delivery location will remove cart items. Do you want to continue?'
+      );
+      if (!shouldClear) return;
+      clearCart();
+    }
+
     commitLocation();
 
     // Prefetch banners and menu for the selected city/area so they load instantly
@@ -304,16 +364,31 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               </button>
             </div>
 
-            {/* Login nudge */}
-            <p className="text-neutral-500 text-xs mb-6 leading-relaxed">
+            {/* Login nudge for guests only */}
+            {!user?.phone && (
+              <p className="text-neutral-500 text-xs mb-6 leading-relaxed">
+                <button
+                  onClick={() => { onClose(); onOpenLogin(); }}
+                  className="text-green-500 font-bold hover:underline"
+                >
+                  Login
+                </button>{' '}
+                to save your address for faster checkout.
+              </p>
+            )}
+
+            {mode === 'delivery' && (
               <button
-                onClick={() => { onClose(); onOpenLogin(); }}
-                className="text-green-500 font-bold hover:underline"
+                onClick={() => setIsMapPickerOpen(true)}
+                className="group w-full bg-[#0a0a0a] border border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
               >
-                Login
-              </button>{' '}
-              to save your address for faster checkout.
-            </p>
+                <div>
+                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Map</p>
+                  <p className="text-white font-bold">Select on Map</p>
+                </div>
+                <ChevronRight size={16} className="text-neutral-500 group-hover:text-yellow-500 transition-colors" />
+              </button>
+            )}
 
             {/* City Row */}
             <div
@@ -347,6 +422,49 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                   )}
                 </div>
                 <ChevronRight size={16} className="text-neutral-500 group-hover:text-yellow-500 transition-colors" />
+              </div>
+            )}
+
+            {mode === 'delivery' && !!user?.phone && (
+              <div className="mb-4 rounded-xl border border-white/10 bg-[#0a0a0a] p-4">
+                <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Saved Addresses</p>
+                {savedAddressesLoading ? (
+                  <div className="text-sm text-neutral-500 flex items-center gap-2">
+                    <Loader2 size={14} className="animate-spin" /> Loading saved addresses...
+                  </div>
+                ) : savedAddresses.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No saved addresses found.</p>
+                ) : (
+                  <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
+                    {savedAddresses.map((addr) => {
+                      const active = draftCity === addr.city && draftArea === addr.area;
+                      return (
+                        <div
+                          key={addr.id}
+                          className={`rounded-xl border p-3 transition-all ${active ? 'border-yellow-500/40 bg-yellow-500/10' : 'border-white/10 bg-white/0'}`}
+                        >
+                          <button
+                            onClick={() => selectSavedAddress(addr)}
+                            className="w-full text-left"
+                          >
+                            <p className="text-white font-bold text-sm">{addr.city}{addr.area ? `, ${addr.area}` : ''}</p>
+                            <p className="text-neutral-400 text-xs line-clamp-1">{addr.address || 'Address not provided'}</p>
+                          </button>
+                          <div className="mt-2 flex justify-end">
+                            <button
+                              onClick={() => handleDeleteSavedAddress(addr.id)}
+                              disabled={deletingAddressId === addr.id}
+                              className="px-2 py-1 rounded-lg text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-60 flex items-center gap-1"
+                            >
+                              {deletingAddressId === addr.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -433,6 +551,12 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               SAVE LOCATION
             </button>
 
+            {hasLocationChanged() && cartItems.length > 0 && (
+              <div className="mt-3 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-bold">
+                Switching location will clear cart items.
+              </div>
+            )}
+
             {/* Delivery promise */}
             <div className="mt-8 flex items-center justify-center gap-6 opacity-70 select-none pb-safe-bottom">
               <div className="flex flex-col items-end border-r border-white/10 pr-6">
@@ -478,6 +602,12 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
         currentArea={draftArea}
         areas={areas}
         isLoading={areasLoading}
+      />
+
+      <OpenStreetMapPickerModal
+        isOpen={isMapPickerOpen}
+        onClose={() => setIsMapPickerOpen(false)}
+        onSelect={handleMapSelect}
       />
     </>
   );

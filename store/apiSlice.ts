@@ -4,6 +4,7 @@ import {
   fetchMenuData,
   fetchAreas,
   fetchOutlets,
+  fetchAllOutlets,
   fetchPickupOutlets,
   fetchBlogPosts,
   fetchProductOptions,
@@ -16,11 +17,18 @@ import {
   fetchMyOrders,
   fetchMyWallet,
   fetchCustomerInfo,
+  fetchSavedAddresses,
   updateCustomerInfo,
   deleteAccount,
+  deleteSavedAddress,
   checkNumber,
   verifyCode,
   placeOrder,
+  submitContactUs,
+  submitBirthdayEvent,
+  submitCateringEvent,
+  submitCorporateEvent,
+  submitFranchiseRequest,
   fetchGeoCodeArea,
   checkVoucher,
   fetchOrderStatus,
@@ -30,6 +38,7 @@ import {
   type BirthdayDeal,
   type Order,
   type CustomerInfo,
+  type SavedAddress,
   type PendingOrder,
   type SuggestiveItem,
   type OrderPayload,
@@ -37,6 +46,11 @@ import {
   type VoucherResult,
   type OrderStatus,
   type ReOrderDetails,
+  type ContactUsPayload,
+  type BirthdayEventPayload,
+  type CateringEventPayload,
+  type CorporateEventPayload,
+  type FranchiseRequestPayload,
 } from '../services/api';
 
 type CustomError = { status: 'CUSTOM_ERROR'; error: string };
@@ -47,7 +61,7 @@ const err = (e: unknown): { error: CustomError } => ({
 export const broadwayApi = createApi({
   reducerPath: 'broadwayApi',
   baseQuery: fakeBaseQuery<CustomError>(),
-  tagTypes: ['Orders', 'Customer', 'Wallet'],
+  tagTypes: ['Orders', 'Customer', 'Wallet', 'Addresses'],
   endpoints: (builder) => ({
     // ── Queries ─────────────────────────────────────────────────────────────
     getMenu: builder.query<{ categories: Category[]; products: Product[] }, { city: string; area: string; outlet?: string }>({
@@ -85,6 +99,13 @@ export const broadwayApi = createApi({
       keepUnusedDataFor: 600,
     }),
 
+    getAllOutlets: builder.query<Outlet[], void>({
+      queryFn: async () => {
+        try { return { data: await fetchAllOutlets() }; } catch (e) { return err(e); }
+      },
+      keepUnusedDataFor: 600,
+    }),
+
     getPickupOutlets: builder.query<Outlet[], string>({
       queryFn: async (city) => {
         try { return { data: await fetchPickupOutlets(city) }; } catch (e) { return err(e); }
@@ -106,9 +127,9 @@ export const broadwayApi = createApi({
       keepUnusedDataFor: 600,
     }),
 
-    getHotDeals: builder.query<HotDeal[], void>({
-      queryFn: async () => {
-        try { return { data: await fetchHotDeals() }; } catch (e) { return err(e); }
+    getHotDeals: builder.query<HotDeal[], string | void>({
+      queryFn: async (city) => {
+        try { return { data: await fetchHotDeals(city || 'Karachi') }; } catch (e) { return err(e); }
       },
       keepUnusedDataFor: 60,
     }),
@@ -159,6 +180,14 @@ export const broadwayApi = createApi({
       keepUnusedDataFor: 120,
     }),
 
+    getSavedAddresses: builder.query<SavedAddress[], string>({
+      queryFn: async (phone) => {
+        try { return { data: await fetchSavedAddresses(phone) }; } catch (e) { return err(e); }
+      },
+      providesTags: ['Addresses'],
+      keepUnusedDataFor: 60,
+    }),
+
     getGeoCodeArea: builder.query<GeoCodeResult, { lat: number; lng: number }>({
       queryFn: async ({ lat, lng }) => {
         try { return { data: await fetchGeoCodeArea(lat, lng) }; } catch (e) { return err(e); }
@@ -190,6 +219,36 @@ export const broadwayApi = createApi({
       invalidatesTags: ['Orders'],
     }),
 
+    submitContactUs: builder.mutation<{ success: boolean; message?: string }, ContactUsPayload>({
+      queryFn: async (payload) => {
+        try { return { data: await submitContactUs(payload) }; } catch (e) { return err(e); }
+      },
+    }),
+
+    submitBirthdayEvent: builder.mutation<{ success: boolean; message?: string }, BirthdayEventPayload>({
+      queryFn: async (payload) => {
+        try { return { data: await submitBirthdayEvent(payload) }; } catch (e) { return err(e); }
+      },
+    }),
+
+    submitCateringEvent: builder.mutation<{ success: boolean; message?: string }, CateringEventPayload>({
+      queryFn: async (payload) => {
+        try { return { data: await submitCateringEvent(payload) }; } catch (e) { return err(e); }
+      },
+    }),
+
+    submitCorporateEvent: builder.mutation<{ success: boolean; message?: string }, CorporateEventPayload>({
+      queryFn: async (payload) => {
+        try { return { data: await submitCorporateEvent(payload) }; } catch (e) { return err(e); }
+      },
+    }),
+
+    submitFranchiseRequest: builder.mutation<{ success: boolean; message?: string }, FranchiseRequestPayload>({
+      queryFn: async (payload) => {
+        try { return { data: await submitFranchiseRequest(payload) }; } catch (e) { return err(e); }
+      },
+    }),
+
     updateCustomerInfo: builder.mutation<boolean, { name: string; email: string; phone: string }>({
       queryFn: async ({ name, email, phone }) => {
         try { return { data: await updateCustomerInfo(name, email, phone) }; } catch (e) { return err(e); }
@@ -202,6 +261,13 @@ export const broadwayApi = createApi({
         try { return { data: await deleteAccount(phone) }; } catch (e) { return err(e); }
       },
       invalidatesTags: ['Customer', 'Orders'],
+    }),
+
+    deleteSavedAddress: builder.mutation<{ success: boolean; message?: string }, string>({
+      queryFn: async (addressId) => {
+        try { return { data: await deleteSavedAddress(addressId) }; } catch (e) { return err(e); }
+      },
+      invalidatesTags: ['Addresses'],
     }),
 
     // ── Voucher (CheckVoucherV2) ──────────────────────────────────────────────
@@ -239,6 +305,7 @@ export const {
   useGetCitiesQuery,
   useGetAreasQuery,
   useGetOutletsQuery,
+  useGetAllOutletsQuery,
   useGetPickupOutletsQuery,
   useGetBannersQuery,
   useGetBlogPostsQuery,
@@ -250,11 +317,18 @@ export const {
   useGetMyOrdersQuery,
   useGetMyWalletQuery,
   useGetCustomerInfoQuery,
+  useGetSavedAddressesQuery,
   useCheckNumberMutation,
   useVerifyCodeMutation,
   usePlaceOrderMutation,
+  useSubmitContactUsMutation,
+  useSubmitBirthdayEventMutation,
+  useSubmitCateringEventMutation,
+  useSubmitCorporateEventMutation,
+  useSubmitFranchiseRequestMutation,
   useUpdateCustomerInfoMutation,
   useDeleteAccountMutation,
+  useDeleteSavedAddressMutation,
   useLazyGetGeoCodeAreaQuery,
   useCheckVoucherMutation,
   useGetOrderStatusQuery,

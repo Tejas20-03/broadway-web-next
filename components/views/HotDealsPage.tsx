@@ -5,13 +5,14 @@ import Image from 'next/image';
 import { X, Flame, Timer, Zap, ShoppingBag, ArrowRight, TrendingUp, Star, Users, Bell, ShieldCheck } from 'lucide-react';
 import { Product } from '@/types';
 import { useGetHotDealsQuery } from '@/store/apiSlice';
+import { useLocation } from '@/context/LocationContext';
+import { ProductModal } from '@/components/modals/ProductModal';
 import type { HotDeal } from '@/services/api';
 
 interface HotDealsPageProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (product: any) => void;
-  onProductSelect: (product: Product) => void;
 }
 
 const RECENT_CLAIMS = [
@@ -22,11 +23,14 @@ const RECENT_CLAIMS = [
   "Hurry! Only 2 'Duo Dynamite' deals left in Islamabad."
 ];
 
-export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onAddToCart, onProductSelect }) => {
-  const { data: baseDeals = [] } = useGetHotDealsQuery(undefined, { skip: !isOpen });
+export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onAddToCart }) => {
+  const { location } = useLocation();
+  const city = location?.city || 'Karachi';
+  const { data: baseDeals = [] } = useGetHotDealsQuery(city, { skip: !isOpen });
   // Local countdown state derived from base data
   const [deals, setDeals] = useState<HotDeal[]>([]);
   const [claimIndex, setClaimIndex] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Sync deals from RTK Query data when it arrives
   useEffect(() => {
@@ -53,7 +57,7 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
   };
 
   const handleClaim = (deal: HotDeal) => {
-    const mockProduct: Product = {
+    const hotDealProduct: Product = {
         id: deal.id,
         name: deal.name,
         description: deal.description,
@@ -63,7 +67,7 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
         tags: ['Hot Deal', 'Limited Time'],
         originalPrice: deal.originalPrice
     };
-    onProductSelect(mockProduct);
+    setSelectedProduct(hotDealProduct);
   };
 
   return (
@@ -199,7 +203,8 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
                             </div>
                         </div>
 
-                        <button 
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleClaim(deal); }}
                             className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-3xl bg-yellow-500 text-black flex items-center justify-center shadow-lg transition-all active:scale-90 group/btn relative overflow-hidden"
                         >
                             <ShoppingBag size={18} strokeWidth={2.5} className="md:w-7 md:h-7 relative z-10" />
@@ -243,6 +248,13 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
               </div>
           </div>
       </footer>
+
+      <ProductModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={onAddToCart}
+      />
     </div>
   );
 };

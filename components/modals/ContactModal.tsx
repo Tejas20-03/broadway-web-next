@@ -1,7 +1,8 @@
 ﻿'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Send, Phone, MessageCircle, Mail, MapPin, Headphones, ArrowRight, ExternalLink } from 'lucide-react';
+import { useSubmitContactUsMutation } from '@/store/apiSlice';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -9,6 +10,41 @@ interface ContactModalProps {
 }
 
 export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
+    const [submitContactUs, { isLoading }] = useSubmitContactUsMutation();
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [remarks, setRemarks] = useState('');
+    const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus(null);
+
+        if (!name.trim()) {
+            setStatus({ ok: false, text: 'Please type all the required fields.' });
+            return;
+        }
+
+        const res = await submitContactUs({
+            Name: name.trim(),
+            Phone: phone.trim(),
+            Remarks: remarks.trim(),
+        }).unwrap();
+
+        if (res.success) {
+            setName('');
+            setPhone('');
+            setRemarks('');
+            setStatus({
+                ok: true,
+                text: res.message ?? 'Your information has been sent to our team, You will get a callback from us to assist you accordingly.',
+            });
+            return;
+        }
+
+        setStatus({ ok: false, text: res.message ?? 'Could not submit your message. Please try again.' });
+    };
+
   if (!isOpen) return null;
 
   return (
@@ -116,12 +152,15 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                         <p className="text-neutral-500 text-sm">Have a suggestion or complaint? Fill out the form below.</p>
                     </div>
 
-                    <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                    <form className="space-y-5" onSubmit={handleSubmit}>
                         <div className="grid grid-cols-2 gap-5">
                             <div className="space-y-1.5 group">
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest group-focus-within:text-yellow-500 transition-colors">Name</label>
                                 <input 
                                     type="text" 
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
                                     className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-700 focus:outline-none focus:border-yellow-500 focus:bg-[#1a1a1a] transition-all text-sm font-medium"
                                     placeholder="John Doe"
                                 />
@@ -130,6 +169,8 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest group-focus-within:text-yellow-500 transition-colors">Phone</label>
                                 <input 
                                     type="tel" 
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
                                     className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-700 focus:outline-none focus:border-yellow-500 focus:bg-[#1a1a1a] transition-all text-sm font-medium"
                                     placeholder="0300..."
                                 />
@@ -137,26 +178,30 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                         </div>
 
                         <div className="space-y-1.5 group">
-                            <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest group-focus-within:text-yellow-500 transition-colors">Subject</label>
-                            <select className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:bg-[#1a1a1a] transition-all text-sm font-medium appearance-none cursor-pointer">
-                                <option>Feedback</option>
-                                <option>Complaint</option>
-                                <option>Franchise Query</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-1.5 group">
                             <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest group-focus-within:text-yellow-500 transition-colors">Message</label>
                             <textarea 
                                 rows={4}
+                                value={remarks}
+                                onChange={(e) => setRemarks(e.target.value)}
                                 className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-700 focus:outline-none focus:border-yellow-500 focus:bg-[#1a1a1a] transition-all text-sm font-medium resize-none"
                                 placeholder="How can we help you?"
                             />
                         </div>
 
-                        <button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-base py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
-                            <span>Submit Request</span>
+                        {status && (
+                          <div
+                            className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                              status.ok
+                                ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                                : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                            }`}
+                          >
+                            {status.text}
+                          </div>
+                        )}
+
+                        <button type="submit" disabled={isLoading} className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black text-base py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <span>{isLoading ? 'Sending...' : 'Send your message'}</span>
                             <ArrowRight size={18} strokeWidth={3} />
                         </button>
                     </form>

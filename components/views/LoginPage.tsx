@@ -24,6 +24,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [timer, setTimer] = useState(59);
   const [isNewCustomer, setIsNewCustomer] = useState(true);
+    const [profileRequired, setProfileRequired] = useState(false);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -36,6 +37,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
       setOtp(['', '', '', '', '', '']);
       setIsLoading(false);
       setErrorMsg('');
+            setProfileRequired(false);
     }
   }, [isOpen]);
 
@@ -49,7 +51,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phoneNumber.length < 10 || !fullName.trim() || !email.trim()) return;
+        if (phoneNumber.length < 10) return;
     setIsLoading(true);
     setErrorMsg('');
     const fullPhone = '0' + phoneNumber;
@@ -57,7 +59,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
       const result = await checkNumberMutation(fullPhone).unwrap();
       setIsLoading(false);
       if (result.success) {
-        setIsNewCustomer(result.isNewCustomer ?? true);
+                const nextIsNew = result.isNewCustomer ?? true;
+                setIsNewCustomer(nextIsNew);
+                if (nextIsNew && (!fullName.trim() || !email.trim())) {
+                    setProfileRequired(true);
+                    setErrorMsg('Please enter your full name and email to continue as a new customer.');
+                    return;
+                }
+                setProfileRequired(false);
         setStep('otp');
         setTimer(59);
       } else {
@@ -87,11 +96,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
     setIsLoading(true);
     setErrorMsg('');
     const fullPhone = '0' + phoneNumber;
+        const resolvedName = fullName.trim() || 'Customer';
+        const resolvedEmail = email.trim() || `${fullPhone}@broadway.local`;
     try {
-      const result = await verifyCodeMutation({ name: fullName, phone: fullPhone, email, code }).unwrap();
+            const result = await verifyCodeMutation({ name: resolvedName, phone: fullPhone, email: resolvedEmail, code }).unwrap();
       setIsLoading(false);
       if (result.success) {
-        login({ name: fullName, phone: fullPhone, email, walletCode: result.walletCode ?? '' });
+                login({ name: resolvedName, phone: fullPhone, email: resolvedEmail, walletCode: result.walletCode ?? '' });
         onClose();
       } else {
         setErrorMsg(result.message ?? 'Invalid code.');
@@ -154,7 +165,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         Unlock Flavor
                     </h2>
                     <p className="text-neutral-500 text-xs font-medium text-center mt-2 max-w-[280px]">
-                        Join the family to earn points and get exclusive deals.
+                        Returning users can continue with phone only. New users should add name and email.
                     </p>
                 </div>
 
@@ -207,7 +218,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         </div>
                     )}
 
-                    <button type="submit" disabled={phoneNumber.length < 10 || !fullName || !email || isLoading}
+                    {profileRequired && (
+                        <div className="text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 font-medium">
+                            New customer detected: name and email are required before sending OTP.
+                        </div>
+                    )}
+
+                    <button type="submit" disabled={phoneNumber.length < 10 || isLoading}
                         className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-black py-4 rounded-2xl font-black text-lg uppercase tracking-wide transition-all transform hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 mt-2"
                     >
                         {isLoading ? <Loader2 className="animate-spin" /> : <><span>Get Verification Code</span><ArrowRight size={20} strokeWidth={3} /></>}

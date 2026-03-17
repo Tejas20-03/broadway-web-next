@@ -20,6 +20,8 @@ import { CartDrawer } from '../components/modals/CartDrawer';
 import { ProductModal } from '../components/modals/ProductModal';
 import { LocationModal } from '../components/modals/LocationModal';
 import { ContactModal } from '../components/modals/ContactModal';
+import { CateringModal } from '../components/modals/CateringModal';
+import { CorporateModal } from '../components/modals/CorporateModal';
 import { FranchiseModal } from '../components/modals/FranchiseModal';
 import { BirthdayModal } from '../components/modals/BirthdayModal';
 import { FeedbackModal } from '../components/modals/FeedbackModal';
@@ -91,6 +93,8 @@ export default function Home() {
     isLocationOpen, openLocation, closeLocation,
     isLoginOpen, openLogin, closeLogin,
     isContactOpen, openContact, closeContact,
+    isCateringOpen, openCatering, closeCatering,
+    isCorporateOpen, openCorporate, closeCorporate,
     isFranchiseOpen, openFranchise, closeFranchise,
     isBirthdayOpen, openBirthday, closeBirthday,
     isFeedbackOpen, openFeedback, closeFeedback,
@@ -227,6 +231,8 @@ export default function Home() {
         isOpen={isMenuOpen}
         onClose={closeMenu}
         onOpenContact={openContact}
+        onOpenCatering={openCatering}
+        onOpenCorporate={openCorporate}
         onOpenFranchise={openFranchise}
         onOpenBirthday={openBirthday}
         onOpenFeedback={openFeedback}
@@ -265,6 +271,8 @@ export default function Home() {
       />
 
       <ContactModal isOpen={isContactOpen} onClose={closeContact} />
+  <CateringModal isOpen={isCateringOpen} onClose={closeCatering} />
+  <CorporateModal isOpen={isCorporateOpen} onClose={closeCorporate} />
       <FranchiseModal isOpen={isFranchiseOpen} onClose={closeFranchise} />
       <BirthdayModal isOpen={isBirthdayOpen} onClose={closeBirthday} />
       <FeedbackModal isOpen={isFeedbackOpen} onClose={closeFeedback} />

@@ -41,6 +41,14 @@ export function useApp() {
     openContact: useCallback(() => dispatch(uiActions.openContact()), [dispatch]),
     closeContact: useCallback(() => dispatch(uiActions.closeContact()), [dispatch]),
 
+    isCateringOpen: ui.isCateringOpen,
+    openCatering: useCallback(() => dispatch(uiActions.openCatering()), [dispatch]),
+    closeCatering: useCallback(() => dispatch(uiActions.closeCatering()), [dispatch]),
+
+    isCorporateOpen: ui.isCorporateOpen,
+    openCorporate: useCallback(() => dispatch(uiActions.openCorporate()), [dispatch]),
+    closeCorporate: useCallback(() => dispatch(uiActions.closeCorporate()), [dispatch]),
+
     isFranchiseOpen: ui.isFranchiseOpen,
     openFranchise: useCallback(() => dispatch(uiActions.openFranchise()), [dispatch]),
     closeFranchise: useCallback(() => dispatch(uiActions.closeFranchise()), [dispatch]),

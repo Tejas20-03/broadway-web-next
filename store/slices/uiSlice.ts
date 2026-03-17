@@ -28,6 +28,8 @@ interface UiState {
   checkoutVoucher: { code: string; amount: number };
   isLoginOpen: boolean;
   isContactOpen: boolean;
+  isCateringOpen: boolean;
+  isCorporateOpen: boolean;
   isFranchiseOpen: boolean;
   isBirthdayOpen: boolean;
   isFeedbackOpen: boolean;
@@ -44,6 +46,8 @@ const initialState: UiState = {
   checkoutVoucher: { code: '', amount: 0 },
   isLoginOpen: false,
   isContactOpen: false,
+  isCateringOpen: false,
+  isCorporateOpen: false,
   isFranchiseOpen: false,
   isBirthdayOpen: false,
   isFeedbackOpen: false,
@@ -84,6 +88,10 @@ const uiSlice = createSlice({
     closeLogin(state) { state.isLoginOpen = false; },
     openContact(state) { state.isContactOpen = true; },
     closeContact(state) { state.isContactOpen = false; },
+    openCatering(state) { state.isCateringOpen = true; },
+    closeCatering(state) { state.isCateringOpen = false; },
+    openCorporate(state) { state.isCorporateOpen = true; },
+    closeCorporate(state) { state.isCorporateOpen = false; },
     openFranchise(state) { state.isFranchiseOpen = true; },
     closeFranchise(state) { state.isFranchiseOpen = false; },
     openBirthday(state) { state.isBirthdayOpen = true; },

@@ -2,9 +2,11 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { X, ArrowRight, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
 import { useGetBlogPostsQuery } from '@/store/apiSlice';
 import { BlogPost } from '@/types';
+import { getBlogSlug } from '@/services/api';
 
 interface BlogPageProps {
   isOpen: boolean;
@@ -20,12 +22,16 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
+  const router = useRouter();
   const { data: posts = [], isLoading } = useGetBlogPostsQuery(undefined, { skip: !isOpen });
 
   if (!isOpen) return null;
 
   const featured = posts[0] ?? null;
   const rest = posts.slice(1);
+  const openPost = (post: BlogPost) => {
+    router.push(`/blog/${encodeURIComponent(getBlogSlug(post))}`);
+  };
 
   return (
     <div className="fixed inset-0 z-[80] bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-right duration-300 custom-scrollbar">
@@ -71,7 +77,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
 
             {/* Large Featured Post */}
             {featured && (
-              <div className="md:col-span-2 md:row-span-2 group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212]">
+              <div onClick={() => openPost(featured)} className="md:col-span-2 md:row-span-2 group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212]">
                 {featured.image && (
                   <Image
                     src={featured.image}
@@ -108,7 +114,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
 
             {/* Smaller Posts */}
             {rest.map((post) => (
-              <div key={post.id} className="group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212] flex flex-col">
+              <div key={post.id} onClick={() => openPost(post)} className="group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212] flex flex-col">
                 <div className="h-1/2 overflow-hidden relative">
                   {post.image && (
                     <Image

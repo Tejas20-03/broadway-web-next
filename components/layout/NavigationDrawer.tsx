@@ -14,6 +14,8 @@ interface NavigationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenContact?: () => void;
+  onOpenCatering?: () => void;
+  onOpenCorporate?: () => void;
   onOpenFranchise?: () => void;
   onOpenBirthday?: () => void;
   onOpenFeedback?: () => void;
@@ -27,6 +29,8 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   isOpen, 
   onClose, 
   onOpenContact, 
+  onOpenCatering,
+  onOpenCorporate,
   onOpenFranchise,
   onOpenBirthday,
   onOpenFeedback,
@@ -95,9 +99,9 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           
           {/* Extra Services */}
           <div className="py-2">
-            <NavItem icon={<Utensils size={20} />} label="Catering Services" />
+            <NavItem icon={<Utensils size={20} />} label="Catering Services" onClick={() => { onClose(); onOpenCatering?.(); }} />
             <NavItem icon={<Gift size={20} />} label="Birthday Parties" onClick={() => { onClose(); onOpenBirthday?.(); }} />
-            <NavItem icon={<Briefcase size={20} />} label="Corporate Deals" />
+            <NavItem icon={<Briefcase size={20} />} label="Corporate Deals" onClick={() => { onClose(); onOpenCorporate?.(); }} />
             <NavItem icon={<Store size={20} />} label="Franchise Info" onClick={() => { onClose(); onOpenFranchise?.(); }} />
           </div>
 
