@@ -45,15 +45,32 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   isOpen, onClose,
   orderId, encOrderId, orderAddress, orderType = 'delivery',
 }) => {
+    const normalizedEncOrderId = (() => {
+        const raw = String(encOrderId ?? '').trim();
+        if (!raw) return '';
+
+        let decoded = raw;
+        try {
+            decoded = decodeURIComponent(raw);
+        } catch {
+            decoded = raw;
+        }
+
+        // Backend may reject base64 padding passed in URL form; keep behavior aligned with live app expectations.
+        return decoded.replace(/=+$/g, '');
+    })();
+
+        console.log("encOrderId", encOrderId); // Debug log for encOrderId prop
   // Poll live status every 2 s, matching Cordova's setInterval(checkDeliveryStatus, 2000)
-  const { data: orderStatus } = useGetOrderStatusQuery(encOrderId ?? '', {
-    skip: !encOrderId,
-    pollingInterval: 2000,
+    const { data: orderStatus } = useGetOrderStatusQuery(normalizedEncOrderId, {
+        skip: !normalizedEncOrderId,
+    pollingInterval: 30000,
   });
 
   // Fetch full order receipt from ReOrderV1
-  const { data: reOrderData } = useGetReOrderDetailsQuery(encOrderId ?? '', {
-    skip: !encOrderId,
+    const { data: reOrderData } = useGetReOrderDetailsQuery(normalizedEncOrderId, {
+        skip: !normalizedEncOrderId,
+        refetchOnMountOrArgChange: true,
   });
 
   // Use live reOrderData.orderType when available; fall back to prop for initial render
@@ -63,6 +80,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
   // Prefer prop orderId, then live status id (available once status API responds)
   const displayOrderId = orderId || orderStatus?.id;
+
+  console.log('Order Status:', orderStatus); // Debug log
+  console.log('ReOrder Data:', reOrderData); // Debug log
 
   const dispatch = useAppDispatch();
   const [toastMsg, setToastMsg] = useState('');

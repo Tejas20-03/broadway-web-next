@@ -10,7 +10,7 @@ export default function AccountRoute() {
     <AccountPage
       isOpen={true}
       onClose={() => router.push('/')}
-      onViewOrder={(_, encOrderId) => router.push(`/order/${encodeURIComponent(encOrderId)}`)}
+      onViewOrder={(_, encOrderId) => router.push(`/order/${encOrderId}`)}
     />
   );
 }

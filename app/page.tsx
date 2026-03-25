@@ -298,7 +298,7 @@ export default function Home() {
               </button>
               {/* Track pill */}
               <button
-                onClick={() => router.push(`/order/${encodeURIComponent(latest.encId)}`)}
+                onClick={() => router.push(`/order/${latest.encId}`)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl font-bold text-sm text-black transition-transform active:scale-95 ${isConfirmed ? 'bg-green-500' : 'bg-yellow-400'}`}
               >
                 <span className="w-2 h-2 rounded-full bg-black/30 animate-pulse shrink-0" />

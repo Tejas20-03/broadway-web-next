@@ -18,7 +18,7 @@ export default function CheckoutRoute() {
     dispatch(cartActions.clearCart());
     dispatch(uiActions.setCheckoutVoucher({ code: '', amount: 0 }));
     if (encOrderId) {
-      router.replace(`/order/${encodeURIComponent(encOrderId)}`);
+      router.replace(`/order/${encOrderId}`);
     } else {
       router.replace('/');
     }

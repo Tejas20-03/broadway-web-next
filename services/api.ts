@@ -1121,6 +1121,17 @@ export const submitFranchiseRequest = async (
 // ---------------------------------------------------------------------------
 export type OrderStatusPhase = 'Pending' | 'Confirmed' | 'Preparing' | 'Out for Delivery' | 'Delivered' | 'Ready for Pickup' | 'Rejected';
 
+function normalizeOrderId(orderId: string): string {
+  const raw = String(orderId ?? '').trim();
+  if (!raw) return '';
+
+  try {
+    return decodeURIComponent(raw).replace(/=+$/g, '');
+  } catch {
+    return raw.replace(/=+$/g, '');
+  }
+}
+
 export interface OrderStatus {
   id: string;
   status: OrderStatusPhase | string;
@@ -1135,11 +1146,12 @@ export interface OrderStatus {
 
 export const fetchOrderStatus = async (orderId: string): Promise<OrderStatus | null> => {
   try {
-    const data = await apiFetch(`BroadwayAPI.aspx?Method=CheckOrderStatusV1&OrderID=${encodeURIComponent(orderId)}`);
+    const normalizedOrderId = normalizeOrderId(orderId);
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=CheckOrderStatusV1&OrderID=${normalizedOrderId}`);
     if (!data?.Data?.[0]) return null;
     const d = data.Data[0];
     return {
-      id: String(d.id ?? orderId),
+      id: String(d.id ?? normalizedOrderId),
       status: d.status ?? 'Pending',
       deliveryTime: String(d.deliverytime ?? '30'),
       orderAmount: parseFloat(d.orderamount ?? '0'),
@@ -1183,7 +1195,8 @@ export interface ReOrderDetails {
 
 export const fetchReOrderDetails = async (orderId: string): Promise<ReOrderDetails | null> => {
   try {
-    const data = await apiFetch(`BroadwayAPI.aspx?Method=ReOrderV1&OrderID=${encodeURIComponent(orderId)}`);
+    const normalizedOrderId = normalizeOrderId(orderId);
+    const data = await apiFetch(`BroadwayAPI.aspx?Method=ReOrderV1&OrderID=${normalizedOrderId}`);
     if (!data || data.ResponseType === 0) return null;
     return {
       customerName: data.CustomerName ?? '',
