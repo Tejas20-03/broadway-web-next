@@ -90,6 +90,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) otpRefs.current[index - 1]?.focus();
   };
 
+    const handleOtpPaste = (index: number, e: React.ClipboardEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData('text').replace(/\D/g, '');
+        if (!pasted) return;
+
+        const nextOtp = [...otp];
+        let writeIndex = index;
+
+        for (const ch of pasted) {
+            if (writeIndex >= nextOtp.length) break;
+            nextOtp[writeIndex] = ch;
+            writeIndex += 1;
+        }
+
+        setOtp(nextOtp);
+
+        const nextEmpty = nextOtp.findIndex((d, i) => i >= index && !d);
+        const focusIndex = nextEmpty === -1 ? Math.min(nextOtp.length - 1, writeIndex - 1) : nextEmpty;
+        otpRefs.current[focusIndex]?.focus();
+    };
+
   const handleVerify = async () => {
     const code = otp.filter(d => d).join('');
     if (code.length < 4) return;
@@ -272,9 +293,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         <input key={idx}
                             ref={(el) => { otpRefs.current[idx] = el; }}
                             type="text" inputMode="numeric" maxLength={1}
+                            autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                            pattern="[0-9]*"
                             value={digit}
                             onChange={(e) => handleOtpChange(idx, e.target.value)}
                             onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                            onPaste={(e) => handleOtpPaste(idx, e)}
                             className={`w-11 h-14 rounded-xl bg-[#0e0e0e] border-2 text-center text-2xl font-black text-white focus:outline-none transition-all ${
                                 digit ? 'border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'border-white/10 focus:border-yellow-500/50'
                             }`}
