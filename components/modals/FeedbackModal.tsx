@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, MessageCircle, Search, ExternalLink, Loader2 } from 'lucide-react';
@@ -43,19 +43,19 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300"
+        className="absolute inset-0 bg-white/70 dark:bg-black/90 backdrop-blur-xl animate-in fade-in duration-300"
         onClick={onClose}
       />
 
       {/* Modal Content */}
-    <div className="relative w-full h-[100dvh] md:h-auto md:max-h-[90vh] md:max-w-2xl bg-[#0a0a0a] border-0 md:border border-white/10 rounded-none md:rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-300 flex flex-col overflow-hidden">
+    <div className="relative w-full h-[100dvh] md:h-auto md:max-h-[90vh] md:max-w-2xl bg-white dark:bg-[#0a0a0a] border-0 md:border border-neutral-200 dark:border-white/10 rounded-none md:rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-300 flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between shrink-0">
-            <h2 className="text-xl font-black text-white uppercase tracking-tight">Feedback</h2>
+        <div className="px-6 py-5 border-b border-neutral-200 dark:border-white/5 flex items-center justify-between shrink-0">
+            <h2 className="text-xl font-black text-neutral-900 dark:text-white uppercase tracking-tight">Feedback</h2>
             <button 
                 onClick={onClose}
-                className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors border border-white/5"
+                className="p-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-full text-neutral-900 dark:text-white transition-colors border border-neutral-200 dark:border-white/5"
             >
                 <X size={20} />
             </button>
@@ -64,7 +64,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         {/* Scrollable Form Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
                         <div className="space-y-6">
-                                <div className="rounded-xl border border-white/10 bg-[#161616] p-4 text-neutral-300 text-sm">
+                                <div className="rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#161616] p-4 text-neutral-700 dark:text-neutral-300 text-sm">
                                     Select outlet to start feedback.
                                 </div>
 
@@ -75,11 +75,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search outlet"
-                                        className="w-full bg-[#161616] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-yellow-500 transition-colors text-sm"
+                                        className="w-full bg-white dark:bg-[#161616] border border-neutral-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:border-yellow-500 transition-colors text-sm"
                                     />
                                 </div>
 
-                                <div className="max-h-[45vh] overflow-y-auto custom-scrollbar rounded-xl border border-white/10 bg-[#111]">
+                                <div className="max-h-[45vh] overflow-y-auto custom-scrollbar rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#111]">
                                     {isLoading || isFetching ? (
                                         <div className="py-10 flex items-center justify-center text-neutral-500 text-sm">
                                             <Loader2 size={18} className="animate-spin mr-2" /> Loading outlets...
@@ -92,10 +92,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                                                 key={outlet.id}
                                                 type="button"
                                                 onClick={() => setSelectedOutletId(outlet.id)}
-                                                className={`w-full text-left px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors ${
+                                                className={`w-full text-left px-4 py-3 border-b border-neutral-200 dark:border-white/5 last:border-b-0 transition-colors ${
                                                     selectedOutletId === outlet.id
-                                                        ? 'bg-yellow-500/15 text-yellow-400'
-                                                        : 'text-white hover:bg-white/5'
+                                                        ? 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-300'
+                                                        : 'text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-white/5'
                                                 }`}
                                             >
                                                 {outlet.name}
@@ -124,3 +124,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     </div>
   );
 };
+
+
+

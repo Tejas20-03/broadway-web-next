@@ -172,19 +172,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[400] bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-bottom duration-300 custom-scrollbar">
+    <div className="fixed inset-0 z-[400] bg-gray-50 dark:bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-bottom duration-300 custom-scrollbar">
       
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/10 px-4 md:px-8 py-4">
+    <header className="sticky top-0 z-50 bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-neutral-200 dark:border-white/10 px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
                 <button 
                     onClick={onBack}
-                    className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5"
+                    className="p-2 rounded-full bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-900 dark:text-white transition-colors border border-neutral-200 dark:border-white/5"
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight italic">Secure Checkout</h1>
+                <h1 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tight italic">Secure Checkout</h1>
             </div>
             <div className="flex items-center gap-2">
                 <ShieldCheck size={18} className="text-green-500" />
@@ -200,35 +200,35 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
             <div className="flex-1 space-y-8">
                 
                 {/* 1. Contact Info */}
-                <section className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5 relative overflow-hidden group">
+                <section className="bg-white dark:bg-[#121212] rounded-3xl p-6 md:p-8 border border-neutral-200 dark:border-white/5 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none transition-transform group-hover:scale-110"></div>
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold text-sm">1</div>
-                        <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">Personal Information</h2>
+                        <h2 className="text-lg md:text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-wide">Personal Information</h2>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="group/input relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within/input:text-yellow-500 transition-colors" size={18} />
-                            <input type="text" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
+                            <input type="text" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 pl-12 pr-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600" />
                         </div>
                         <div className="group/input relative">
                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within/input:text-yellow-500 transition-colors" size={18} />
-                            <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
+                            <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 pl-12 pr-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600" />
                         </div>
                         <div className="group/input relative md:col-span-2">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within/input:text-yellow-500 transition-colors" size={18} />
-                            <input type="email" placeholder="Email Address (Optional)" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
+                            <input type="email" placeholder="Email Address (Optional)" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 pl-12 pr-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600" />
                         </div>
                     </div>
                 </section>
 
                 {/* 2. Delivery Address / Pickup Outlet */}
-                <section className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5 relative overflow-hidden">
+                <section className="bg-white dark:bg-[#121212] rounded-3xl p-6 md:p-8 border border-neutral-200 dark:border-white/5 relative overflow-hidden">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold text-sm">2</div>
-                            <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">
+                            <h2 className="text-lg md:text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-wide">
                                 {location.orderType === 'pickup' ? 'Pickup Outlet' : 'Delivery Address'}
                             </h2>
                         </div>
@@ -237,7 +237,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         )}
                     </div>
 
-                    <div className="w-full h-36 rounded-xl bg-[#161616] mb-6 relative overflow-hidden border border-white/10 group cursor-pointer">
+                    <div className="w-full h-36 rounded-xl bg-neutral-100 dark:bg-[#161616] mb-6 relative overflow-hidden border border-neutral-200 dark:border-white/10 group cursor-pointer">
                         <div className="absolute inset-0 opacity-20">
                            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
@@ -262,17 +262,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <input type="text" placeholder="Apartment / House / Office No." value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
-                            <input type="text" placeholder="Street Name / Landmarks" value={landmark} onChange={e => setLandmark(e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600" />
+                            <input type="text" placeholder="Apartment / House / Office No." value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 px-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600" />
+                            <input type="text" placeholder="Street Name / Landmarks" value={landmark} onChange={e => setLandmark(e.target.value)} className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 px-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600" />
                         </div>
                     )}
                 </section>
 
                 {/* 3. Payment Method */}
-                <section className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5">
+                <section className="bg-white dark:bg-[#121212] rounded-3xl p-6 md:p-8 border border-neutral-200 dark:border-white/5">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold text-sm">3</div>
-                        <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">Payment Choice</h2>
+                        <h2 className="text-lg md:text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-wide">Payment Choice</h2>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -282,13 +282,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                                 relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-3 group
                                 ${paymentMethod === 'cod' 
                                     ? 'border-yellow-500 bg-yellow-500/10' 
-                                    : 'border-white/5 bg-[#0a0a0a] hover:border-white/20'}
+                                    : 'border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-[#0a0a0a] hover:border-neutral-300 dark:hover:border-white/20'}
                             `}
                         >
-                            <div className={`p-3 rounded-full ${paymentMethod === 'cod' ? 'bg-yellow-500 text-black' : 'bg-[#1a1a1a] text-neutral-500 group-hover:text-white'}`}>
+                            <div className={`p-3 rounded-full ${paymentMethod === 'cod' ? 'bg-yellow-500 text-black' : 'bg-neutral-200 dark:bg-[#1a1a1a] text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>
                                 <Banknote size={24} />
                             </div>
-                            <h3 className={`font-bold ${paymentMethod === 'cod' ? 'text-white' : 'text-neutral-400 group-hover:text-white'}`}>Cash on Delivery</h3>
+                            <h3 className={`font-bold ${paymentMethod === 'cod' ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>Cash on Delivery</h3>
                             {paymentMethod === 'cod' && <div className="absolute top-3 right-3 w-3 h-3 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>}
                         </div>
 
@@ -298,45 +298,45 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                                 relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-3 group
                                 ${paymentMethod === 'card' 
                                     ? 'border-yellow-500 bg-yellow-500/10' 
-                                    : 'border-white/5 bg-[#0a0a0a] hover:border-white/20'}
+                                    : 'border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-[#0a0a0a] hover:border-neutral-300 dark:hover:border-white/20'}
                             `}
                         >
-                            <div className={`p-3 rounded-full ${paymentMethod === 'card' ? 'bg-yellow-500 text-black' : 'bg-[#1a1a1a] text-neutral-500 group-hover:text-white'}`}>
+                            <div className={`p-3 rounded-full ${paymentMethod === 'card' ? 'bg-yellow-500 text-black' : 'bg-neutral-200 dark:bg-[#1a1a1a] text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>
                                 <CreditCard size={24} />
                             </div>
-                            <h3 className={`font-bold ${paymentMethod === 'card' ? 'text-white' : 'text-neutral-400 group-hover:text-white'}`}>Digital Payment</h3>
+                            <h3 className={`font-bold ${paymentMethod === 'card' ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>Digital Payment</h3>
                             {paymentMethod === 'card' && <div className="absolute top-3 right-3 w-3 h-3 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>}
                         </div>
                     </div>
                 </section>
                 {/* 4. Cooking / Special Instructions */}
-                <section className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5">
+                <section className="bg-white dark:bg-[#121212] rounded-3xl p-6 md:p-8 border border-neutral-200 dark:border-white/5">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold text-sm">4</div>
-                        <h2 className="text-lg md:text-xl font-bold text-white uppercase tracking-wide">Special Instructions</h2>
+                        <h2 className="text-lg md:text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-wide">Special Instructions</h2>
                     </div>
                     <textarea
                         placeholder="Any special requests? (e.g. extra spicy, no onions...)"
                         value={remarks}
                         onChange={e => setRemarks(e.target.value)}
                         rows={3}
-                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-600 resize-none text-sm"
+                        className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 px-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600 resize-none text-sm"
                     />
                 </section>
             </div>
             <div className="lg:w-[400px] shrink-0">
-                <div className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-white/5 sticky top-32">
-                    <h2 className="text-xl font-bold text-white uppercase tracking-wide mb-6">Payment Summary</h2>
+                <div className="bg-white dark:bg-[#121212] rounded-3xl p-6 md:p-8 border border-neutral-200 dark:border-white/5 sticky top-32">
+                    <h2 className="text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-wide mb-6">Payment Summary</h2>
                     
                     <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar mb-6 pr-2">
                         {cartItems.map(item => (
                             <div key={item.cartId} className="flex gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-[#0a0a0a] overflow-hidden border border-white/5 shrink-0 relative">
+                                <div className="w-12 h-12 rounded-lg bg-neutral-100 dark:bg-[#0a0a0a] overflow-hidden border border-neutral-200 dark:border-white/5 shrink-0 relative">
                                     <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start">
-                                        <p className="text-sm font-bold text-white truncate">
+                                        <p className="text-sm font-bold text-neutral-900 dark:text-white truncate">
                                             <span className="text-yellow-500 mr-1">{item.quantity}x</span> {item.name}
                                         </p>
                                     </div>
@@ -346,7 +346,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         ))}
                     </div>
 
-                    <div className="border-t border-white/5 pt-4 space-y-2 mb-6">
+                    <div className="border-t border-neutral-200 dark:border-white/5 pt-4 space-y-2 mb-6">
                         <div className="flex justify-between text-neutral-400 text-xs">
                             <span>Items Total</span>
                             <span>Rs. {subtotal}</span>
@@ -369,7 +369,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         </div>
                     </div>
 
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/5 mb-6">
+                    <div className="bg-neutral-100 dark:bg-white/5 rounded-xl p-4 border border-neutral-200 dark:border-white/5 mb-6">
                         <div className="flex justify-between items-center">
                             <span className="text-neutral-400 font-bold uppercase text-[10px] tracking-widest">Total Payable</span>
                             <span className="text-2xl font-black text-yellow-500">Rs. {total}</span>

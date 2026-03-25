@@ -149,12 +149,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/90 backdrop-blur-xl animate-in fade-in duration-500"
+                className="absolute inset-0 bg-white/70 dark:bg-black/90 backdrop-blur-xl animate-in fade-in duration-500"
         onClick={onClose}
       />
 
       {/* Login Card */}
-      <div className="relative w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 flex flex-col group/card min-h-[550px]">
+    <div className="relative w-full max-w-md bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 flex flex-col group/card min-h-[550px]">
         
         {/* Background Gradients */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/5 rounded-full blur-[100px] pointer-events-none"></div>
@@ -163,7 +163,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
         {/* Close Button */}
         <button 
             onClick={onClose}
-            className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-full text-white backdrop-blur-sm border border-white/5 transition-all z-20"
+            className="absolute top-6 right-6 p-2 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-full text-neutral-900 dark:text-white backdrop-blur-sm border border-neutral-200 dark:border-white/5 transition-all z-20"
         >
             <X size={20} />
         </button>
@@ -182,7 +182,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         className="h-16 w-auto object-contain mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                         priority
                     />
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tight text-center">
+                    <h2 className="text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tight text-center">
                         Unlock Flavor
                     </h2>
                     <p className="text-neutral-500 text-xs font-medium text-center mt-2 max-w-[280px]">
@@ -197,7 +197,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest ml-4">Full Name</label>
                         <div className="relative">
                             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe"
-                                className="w-full bg-[#0e0e0e] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-700 font-bold"
+                                className="w-full bg-neutral-100 dark:bg-[#0e0e0e] border border-neutral-200 dark:border-white/10 rounded-2xl py-4 pl-12 pr-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-700 font-bold"
                             />
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600" size={18} />
                         </div>
@@ -208,7 +208,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest ml-4">Email</label>
                         <div className="relative">
                             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
-                                className="w-full bg-[#0e0e0e] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-700 font-bold"
+                                className="w-full bg-neutral-100 dark:bg-[#0e0e0e] border border-neutral-200 dark:border-white/10 rounded-2xl py-4 pl-12 pr-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-700 font-bold"
                             />
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600 text-base">@</span>
                         </div>
@@ -218,13 +218,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest ml-4">Mobile Number</label>
                         <div className="relative">
-                            <div className="absolute left-0 top-0 bottom-0 w-14 bg-[#161616] border-r border-white/10 rounded-l-2xl flex items-center justify-center">
+                            <div className="absolute left-0 top-0 bottom-0 w-14 bg-neutral-200 dark:bg-[#161616] border-r border-neutral-300 dark:border-white/10 rounded-l-2xl flex items-center justify-center">
                                 <span className="text-neutral-400 font-bold text-sm">+92</span>
                             </div>
                             <input type="tel" value={phoneNumber}
                                 onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); if (v.length <= 10) setPhoneNumber(v); }}
                                 placeholder="3001234567"
-                                className="w-full bg-[#0e0e0e] border border-white/10 rounded-2xl py-4 pl-18 pr-12 text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-700 font-bold tracking-widest"
+                                className="w-full bg-neutral-100 dark:bg-[#0e0e0e] border border-neutral-200 dark:border-white/10 rounded-2xl py-4 pl-18 pr-12 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-700 font-bold tracking-widest"
                                 style={{ paddingLeft: '3.75rem' }}
                             />
                             <Smartphone className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600" size={18} />
@@ -246,12 +246,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                     )}
 
                     <button type="submit" disabled={phoneNumber.length < 10 || isLoading}
-                        className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-black py-4 rounded-2xl font-black text-lg uppercase tracking-wide transition-all transform hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 mt-2"
+                        className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-neutral-300 dark:disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-neutral-900 dark:text-white py-4 rounded-2xl font-black text-lg uppercase tracking-wide transition-all transform hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 mt-2"
                     >
                         {isLoading ? <Loader2 className="animate-spin" /> : <><span>Get Verification Code</span><ArrowRight size={20} strokeWidth={3} /></>}
                     </button>
 
-                    <div className="pt-4 border-t border-dashed border-white/5 flex items-center justify-center gap-2 text-neutral-500">
+                    <div className="pt-4 border-t border-dashed border-neutral-200 dark:border-white/5 flex items-center justify-center gap-2 text-neutral-500">
                         <ShieldCheck size={14} className="text-green-500" />
                         <span className="text-[10px] font-bold uppercase tracking-wide">100% Secure Login &bull; No Spam</span>
                     </div>
@@ -266,22 +266,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                 {/* Navigation */}
                 <button 
                     onClick={() => setStep('phone')}
-                    className="self-start flex items-center gap-1 text-neutral-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider mb-6"
+                    className="self-start flex items-center gap-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors text-xs font-bold uppercase tracking-wider mb-6"
                 >
                     <ChevronLeft size={16} />
                     Back
                 </button>
 
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-[#161616] rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+                    <div className="w-16 h-16 bg-neutral-100 dark:bg-[#161616] rounded-full flex items-center justify-center mx-auto mb-4 border border-neutral-200 dark:border-white/10 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
                         <Lock className="text-yellow-500" size={24} />
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">
+                    <h2 className="text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tight mb-2">
                         {isNewCustomer ? 'Verify Number' : 'Welcome Back!'}
                     </h2>
                     <div className="flex items-center justify-center gap-2 text-neutral-400 text-sm">
-                        <span>Code sent to <span className="text-white font-bold tracking-wider">+92{phoneNumber}</span></span>
-                        <button type="button" onClick={() => setStep('phone')} className="p-1 hover:bg-white/10 rounded text-yellow-500">
+                        <span>Code sent to <span className="text-neutral-900 dark:text-white font-bold tracking-wider">+92{phoneNumber}</span></span>
+                        <button type="button" onClick={() => setStep('phone')} className="p-1 hover:bg-neutral-200 dark:hover:bg-white/10 rounded text-yellow-500">
                             <Edit2 size={12} />
                         </button>
                     </div>
@@ -299,8 +299,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                             onChange={(e) => handleOtpChange(idx, e.target.value)}
                             onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                             onPaste={(e) => handleOtpPaste(idx, e)}
-                            className={`w-11 h-14 rounded-xl bg-[#0e0e0e] border-2 text-center text-2xl font-black text-white focus:outline-none transition-all ${
-                                digit ? 'border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'border-white/10 focus:border-yellow-500/50'
+                            className={`w-11 h-14 rounded-xl bg-neutral-100 dark:bg-[#0e0e0e] border-2 text-center text-2xl font-black text-neutral-900 dark:text-white focus:outline-none transition-all ${
+                                digit ? 'border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'border-neutral-300 dark:border-white/10 focus:border-yellow-500/50'
                             }`}
                         />
                     ))}
@@ -322,7 +322,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         </p>
                     ) : (
                         <button type="button" onClick={handleResend} disabled={isLoading}
-                            className="text-xs font-bold text-yellow-500 hover:text-white uppercase tracking-widest transition-all"
+                            className="text-xs font-bold text-yellow-500 hover:text-neutral-900 dark:hover:text-white uppercase tracking-widest transition-all"
                         >
                             Resend Code
                         </button>
@@ -331,7 +331,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
 
                 <button type="button" onClick={handleVerify}
                     disabled={otp.filter(d => d).join('').length < 4 || isLoading}
-                    className="w-full bg-white hover:bg-neutral-200 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-black py-4 rounded-2xl font-black text-lg uppercase tracking-wide transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 mt-auto"
+                    className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-neutral-300 dark:disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-neutral-900 dark:text-white py-4 rounded-2xl font-black text-lg uppercase tracking-wide transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 mt-auto"
                 >
                     {isLoading ? <Loader2 className="animate-spin" /> : <><span>Verify &amp; Login</span><ShieldCheck size={20} /></>}
                 </button>

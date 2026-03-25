@@ -115,11 +115,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* --- MOBILE FLOATING DOCK NAV --- */}
       <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
-        <div className="bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-[2.5rem] px-2 py-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
+        <div className="bg-white/95 dark:bg-[#121212]/90 backdrop-blur-xl border border-neutral-200 dark:border-white/10 rounded-[2.5rem] px-2 py-2 flex items-center justify-between shadow-[0_10px_30px_-10px_rgba(148,163,184,0.35)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
             
             {/* 1. Home */}
             <div className="flex-1 flex justify-center">
-                <button className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-sm flex items-center justify-center text-yellow-500 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-transform border border-white/5">
+                <button className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-white/5 backdrop-blur-sm flex items-center justify-center text-yellow-500 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-transform border border-neutral-200 dark:border-white/5">
                     <Home size={20} strokeWidth={2.5} fill="currentColor" fillOpacity={0.2} />
                 </button>
             </div>
@@ -128,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex-1 flex justify-center">
                 <button 
                   onClick={() => router.push('/hot-deals')}
-                  className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-sm flex items-center justify-center text-red-500 hover:text-red-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-all border border-white/5"
+                  className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-white/5 backdrop-blur-sm flex items-center justify-center text-red-500 hover:text-red-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-all border border-neutral-200 dark:border-white/5"
                 >
                     <Flame size={20} strokeWidth={2.5} fill="currentColor" fillOpacity={0.2} className="animate-pulse" />
                 </button>
@@ -138,11 +138,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex-1 flex justify-center -mt-8">
                 <button 
                     onClick={toggleCart}
-                    className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white shadow-[0_8px_25px_rgba(234,179,8,0.5)] border-[4px] border-[#0a0a0a] active:scale-95 transition-transform relative"
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white shadow-[0_8px_25px_rgba(234,179,8,0.5)] border-[4px] border-white dark:border-[#0a0a0a] active:scale-95 transition-transform relative"
                 >
                     <ShoppingBag size={24} strokeWidth={2.5} />
                     {cartCount > 0 && (
-                        <span className="absolute top-0 right-0 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-[#0a0a0a]">
+                    <span className="absolute top-0 right-0 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#0a0a0a]">
                             {cartCount}
                         </span>
                     )}
@@ -153,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex-1 flex justify-center">
                 <button 
                     onClick={onOpenSpin}
-                    className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-sm flex items-center justify-center text-pink-500 hover:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-all border border-white/5"
+                  className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-white/5 backdrop-blur-sm flex items-center justify-center text-pink-500 hover:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-all border border-neutral-200 dark:border-white/5"
                 >
                     <Gift size={20} strokeWidth={2} />
                 </button>
@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex-1 flex justify-center">
                 <button 
                     onClick={onOpenMenu}
-                    className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-sm flex items-center justify-center text-neutral-400 hover:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-all border border-white/5"
+                  className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-white/5 backdrop-blur-sm flex items-center justify-center text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-all border border-neutral-200 dark:border-white/5"
                 >
                     <Menu size={20} strokeWidth={2} />
                 </button>

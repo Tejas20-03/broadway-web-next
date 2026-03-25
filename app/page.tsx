@@ -291,7 +291,7 @@ export default function Home() {
               {/* Dismiss button */}
               <button
                 onClick={() => setTrackDismissed(true)}
-                className="w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center text-xs leading-none hover:bg-black/80 transition-colors"
+                className="w-5 h-5 rounded-full bg-white/90 dark:bg-black/60 text-neutral-900 dark:text-white flex items-center justify-center text-xs leading-none hover:bg-white dark:hover:bg-black/80 transition-colors border border-neutral-200 dark:border-white/10"
                 aria-label="Dismiss"
               >
                 &times;

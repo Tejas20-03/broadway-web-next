@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Bike, ShoppingBag, ChevronRight, Clock, Navigation, Loader2, Phone, ArrowLeft, Search, Check, LocateFixed, Trash2 } from 'lucide-react';
@@ -29,7 +29,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
   const { user } = useUser();
   const dispatch = useAppDispatch();
 
-  // Local draft state — only committed to context on Save
+  // Local draft state - only committed to context on Save
   const [mode, setMode] = useState<OrderType>(location.orderType);
   const [draftCity, setDraftCity] = useState(hasSetLocation ? location.city : '');
   const [draftArea, setDraftArea] = useState(hasSetLocation ? location.area : '');
@@ -199,7 +199,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       dispatch(userActions.setGuestPhone(draftPhone.trim()));
     }
 
-    // Pickup: close immediately — no phone required
+    // Pickup: close immediately - no phone required
     if (mode === 'pickup') {
       onClose();
       return;
@@ -231,22 +231,22 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
   const hasSelectedCity = draftCity.trim().length > 0;
 
   const displayLocation = mode === 'delivery'
-    ? `${draftCity}${draftArea ? ` — ${draftArea}` : ''}`
+    ? `${draftCity}${draftArea ? ` - ${draftArea}` : ''}`
     : `${draftOutlet || draftCity}`;
 
-  // ── Phone step (guest only) ────────────────────────────────────────
+  // -- Phone step (guest only) ----------------------------------------
   if (step === 'phone') {
     return (
       <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative w-full md:max-w-md bg-[#0a0a0a] md:rounded-3xl shadow-2xl border-0 md:border border-white/10 overflow-hidden animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-300">
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5 bg-[#121212]">
-            <button onClick={() => setStep('location')} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors">
+        <div className="absolute inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full md:max-w-md bg-white dark:bg-[#0a0a0a] md:rounded-3xl shadow-2xl border-0 md:border border-neutral-200 dark:border-white/10 overflow-hidden animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-300">
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-[#121212]">
+            <button onClick={() => setStep('location')} className="p-2 rounded-full bg-neutral-200 dark:bg-white/5 hover:bg-neutral-300 dark:hover:bg-white/10 text-neutral-900 dark:text-white transition-colors">
               <ArrowLeft size={18} />
             </button>
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-tight">Check Your Orders</h2>
-              <p className="text-neutral-500 text-xs">Location saved — enter your number to track active orders</p>
+              <h2 className="text-lg font-black text-neutral-900 dark:text-white uppercase tracking-tight">Check Your Orders</h2>
+              <p className="text-neutral-500 text-xs">Location saved - enter your number to track active orders</p>
             </div>
           </div>
           <div className="p-6 space-y-4">
@@ -259,7 +259,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                 value={phoneInput}
                 onChange={e => setPhoneInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handlePhoneSubmit()}
-                className="w-full bg-[#1a1a1a] border border-white/10 focus:border-yellow-500/50 rounded-xl py-4 pl-11 pr-4 text-white placeholder:text-neutral-600 outline-none transition-all"
+                className="w-full bg-neutral-100 dark:bg-[#1a1a1a] border border-neutral-200 dark:border-white/10 focus:border-yellow-500/50 rounded-xl py-4 pl-11 pr-4 text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 outline-none transition-all"
               />
             </div>
             <button
@@ -270,7 +270,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               {checkingOrders ? <Loader2 size={18} className="animate-spin" /> : <Phone size={18} />}
               {checkingOrders ? 'Checking...' : 'Check My Orders'}
             </button>
-            <button onClick={onClose} className="w-full py-3 text-neutral-500 hover:text-white text-sm font-bold transition-colors">
+            <button onClick={onClose} className="w-full py-3 text-neutral-500 hover:text-neutral-900 dark:text-white text-sm font-bold transition-colors">
               Skip
             </button>
           </div>
@@ -284,17 +284,17 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+          className="absolute inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
           onClick={onClose}
         />
 
         {/* Modal Container */}
-        <div className="relative w-full h-[100dvh] md:h-auto md:max-w-2xl bg-[#0a0a0a] md:rounded-3xl shadow-2xl overflow-hidden md:border border-white/10 flex flex-col md:max-h-[90vh] animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300">
+        <div className="relative w-full h-[100dvh] md:h-auto md:max-w-2xl bg-white dark:bg-[#0a0a0a] md:rounded-3xl shadow-2xl overflow-hidden md:border border-neutral-200 dark:border-white/10 flex flex-col md:max-h-[90vh] animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-[#121212] shrink-0 pt-safe-top">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-[#121212] shrink-0 pt-safe-top">
             <div className="flex flex-col gap-0.5">
-              <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tighter">
                 {mode === 'delivery' ? 'Delivery Location' : 'Pickup Point'}
               </h2>
               <div className="flex items-center gap-1.5 text-neutral-500">
@@ -315,7 +315,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               </button>
               <button
                 onClick={onClose}
-                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors border border-white/5"
+                className="w-10 h-10 flex items-center justify-center bg-neutral-200 dark:bg-white/5 hover:bg-neutral-300 dark:hover:bg-white/10 rounded-full text-neutral-900 dark:text-white transition-colors border border-neutral-200 dark:border-white/5"
               >
                 <X size={20} />
               </button>
@@ -323,7 +323,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
           </div>
 
           {/* Scrollable Body */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-[#0a0a0a] to-[#111] p-6 md:p-8">
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-white to-neutral-100 dark:from-[#0a0a0a] dark:to-[#111] p-6 md:p-8">
 
             {/* Geo error */}
             {geoError && (
@@ -338,18 +338,18 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
                 {mode === 'delivery' ? 'Delivering To' : 'Picking Up From'}
               </p>
-              <div className="flex items-center gap-2 text-white font-medium text-sm">
+              <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-medium text-sm">
                 <MapPin size={16} className="text-yellow-500 shrink-0" />
                 <span className="line-clamp-1">{displayLocation || 'Not selected yet'}</span>
               </div>
             </div>
 
             {/* Delivery / Pickup Toggle */}
-            <div className="grid grid-cols-2 p-1.5 bg-[#1a1a1a] rounded-2xl mb-6 border border-white/5">
+            <div className="grid grid-cols-2 p-1.5 bg-neutral-100 dark:bg-[#1a1a1a] rounded-2xl mb-6 border border-neutral-200 dark:border-white/5">
               <button
                 onClick={() => setMode('delivery')}
                 className={`flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all duration-300 ${
-                  mode === 'delivery' ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'
+                  mode === 'delivery' ? 'bg-yellow-500 text-neutral-900 dark:text-white shadow-lg shadow-yellow-500/20' : 'text-neutral-500 hover:text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
                 }`}
               >
                 <Bike size={18} strokeWidth={2.5} />
@@ -358,7 +358,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               <button
                 onClick={() => setMode('pickup')}
                 className={`flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-black uppercase tracking-wide transition-all duration-300 ${
-                  mode === 'pickup' ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'
+                  mode === 'pickup' ? 'bg-yellow-500 text-neutral-900 dark:text-white shadow-lg shadow-yellow-500/20' : 'text-neutral-500 hover:text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
                 }`}
               >
                 <ShoppingBag size={18} strokeWidth={2.5} />
@@ -382,11 +382,11 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
             {/* City Row */}
             <div
               onClick={() => setIsCityModalOpen(true)}
-              className="group w-full bg-[#0a0a0a] border border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
+              className="group w-full bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
             >
               <div>
                 <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">City</p>
-                <p className={`font-bold ${hasSelectedCity ? 'text-white' : 'text-neutral-500'}`}>
+                <p className={`font-bold ${hasSelectedCity ? 'text-neutral-900 dark:text-white' : 'text-neutral-500'}`}>
                   {draftCity || 'Select'}
                 </p>
               </div>
@@ -397,7 +397,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
             {mode === 'delivery' && hasSelectedCity && (
               <div
                 onClick={() => setIsAreaModalOpen(true)}
-                className="group w-full bg-[#0a0a0a] border border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
+                className="group w-full bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
               >
                 <div>
                   <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Area</p>
@@ -407,7 +407,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                       <span className="text-sm">Loading areas...</span>
                     </div>
                   ) : (
-                    <p className={`font-bold ${draftArea ? 'text-white' : 'text-neutral-500'}`}>
+                    <p className={`font-bold ${draftArea ? 'text-neutral-900 dark:text-white' : 'text-neutral-500'}`}>
                       {draftArea || 'Select area'}
                     </p>
                   )}
@@ -417,7 +417,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
             )}
 
             {mode === 'delivery' && !!user?.phone && (
-              <div className="mb-4 rounded-xl border border-white/10 bg-[#0a0a0a] p-4">
+              <div className="mb-4 rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] p-4">
                 <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Saved Addresses</p>
                 {savedAddressesLoading ? (
                   <div className="text-sm text-neutral-500 flex items-center gap-2">
@@ -432,13 +432,13 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                       return (
                         <div
                           key={addr.id}
-                          className={`rounded-xl border p-3 transition-all ${active ? 'border-yellow-500/40 bg-yellow-500/10' : 'border-white/10 bg-white/0'}`}
+                          className={`rounded-xl border p-3 transition-all ${active ? 'border-yellow-500/40 bg-yellow-500/10' : 'border-neutral-200 dark:border-white/10 bg-white/0'}`}
                         >
                           <button
                             onClick={() => selectSavedAddress(addr)}
                             className="w-full text-left"
                           >
-                            <p className="text-white font-bold text-sm">{addr.city}{addr.area ? `, ${addr.area}` : ''}</p>
+                            <p className="text-neutral-900 dark:text-white font-bold text-sm">{addr.city}{addr.area ? `, ${addr.area}` : ''}</p>
                             <p className="text-neutral-400 text-xs line-clamp-1">{addr.address || 'Address not provided'}</p>
                           </button>
                           <div className="mt-2 flex justify-end">
@@ -459,9 +459,9 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               </div>
             )}
 
-            {/* Phone Number Row — delivery only */}
+            {/* Phone Number Row - delivery only */}
             {!user?.phone && mode === 'delivery' && (
-              <div className="w-full bg-[#0a0a0a] border border-white/10 focus-within:border-yellow-500/50 rounded-xl p-4 flex items-center gap-3 mb-4 transition-all">
+              <div className="w-full bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 focus-within:border-yellow-500/50 rounded-xl p-4 flex items-center gap-3 mb-4 transition-all">
                 <Phone size={16} className="text-neutral-500 shrink-0" />
                 <div className="flex-1">
                   <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Phone Number</p>
@@ -471,7 +471,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                     placeholder="e.g. 03001234567"
                     value={draftPhone}
                     onChange={e => setDraftPhone(e.target.value)}
-                    className="w-full bg-transparent text-white font-bold placeholder:text-neutral-600 outline-none text-sm"
+                    className="w-full bg-transparent text-neutral-900 dark:text-white font-bold placeholder:text-neutral-500 dark:placeholder:text-neutral-600 outline-none text-sm"
                   />
                 </div>
               </div>
@@ -488,7 +488,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                     placeholder="Search outlet..."
                     value={areaSearch}
                     onChange={e => setAreaSearch(e.target.value)}
-                    className="w-full bg-[#1a1a1a] text-white pl-9 pr-4 py-3 rounded-xl border border-white/10 focus:border-yellow-500/50 outline-none transition-all placeholder:text-neutral-600 font-medium text-sm"
+                    className="w-full bg-neutral-100 dark:bg-[#1a1a1a] text-neutral-900 dark:text-white pl-9 pr-4 py-3 rounded-xl border border-neutral-200 dark:border-white/10 focus:border-yellow-500/50 outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-600 font-medium text-sm"
                   />
                 </div>
                 <div className="max-h-72 overflow-y-auto custom-scrollbar space-y-1 pr-1">
@@ -509,14 +509,14 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
                               w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 group
                               ${isSelected
                                 ? 'bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/30'
-                                : 'hover:bg-white/5 border border-transparent'}
+                                : 'hover:bg-neutral-100 dark:hover:bg-white/5 border border-transparent'}
                             `}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-yellow-500/20 border border-yellow-500/30' : 'bg-white/5 border border-white/10'}`}>
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-yellow-500/20 border border-yellow-500/30' : 'bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10'}`}>
                                 <ShoppingBag size={14} className={isSelected ? 'text-yellow-500' : 'text-neutral-500 group-hover:text-neutral-300'} />
                               </div>
-                              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-white' : 'text-neutral-400 group-hover:text-white'} transition-colors`}>
+                              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-neutral-900 dark:text-white' : 'text-neutral-400 group-hover:text-neutral-900 dark:text-white'} transition-colors`}>
                                 {outlet.name}
                               </span>
                             </div>
@@ -536,7 +536,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
             <button
               onClick={handleSave}
               disabled={(mode === 'delivery' ? (!hasSelectedCity || !draftArea || (!user?.phone && draftPhone.trim().length < 10)) : (!hasSelectedCity || !draftOutletId))}
-              className="w-full mt-6 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2"
+              className="w-full mt-6 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-neutral-900 dark:text-white font-black text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2"
             >
               <Navigation size={20} fill="white" strokeWidth={0} />
               SAVE LOCATION
@@ -550,14 +550,14 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
 
             {/* Delivery promise */}
             <div className="mt-8 flex items-center justify-center gap-6 opacity-70 select-none pb-safe-bottom">
-              <div className="flex flex-col items-end border-r border-white/10 pr-6">
-                <span className="text-white font-black text-2xl italic leading-none tracking-tighter">OPEN</span>
+              <div className="flex flex-col items-end border-r border-neutral-300 dark:border-white/10 pr-6">
+                <span className="text-neutral-900 dark:text-white font-black text-2xl italic leading-none tracking-tighter">OPEN</span>
                 <span className="text-yellow-500 font-black text-3xl italic leading-none tracking-tighter">24/7</span>
               </div>
               <div className="flex items-center gap-3">
                 <Clock size={24} className="text-yellow-500" strokeWidth={2.5} />
                 <div>
-                  <span className="text-white font-black text-3xl italic leading-none tracking-tighter">
+                  <span className="text-neutral-900 dark:text-white font-black text-3xl italic leading-none tracking-tighter">
                     30<span className="text-base align-top ml-0.5 not-italic font-bold text-neutral-400">mins</span>
                   </span>
                   <p className="text-yellow-500 text-[10px] font-black uppercase tracking-[0.2em]">Delivery</p>
@@ -603,5 +603,8 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
     </>
   );
 };
+
+
+
 
 

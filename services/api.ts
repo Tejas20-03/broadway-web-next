@@ -186,67 +186,69 @@ export const slugifyBlogValue = (value: string): string => {
 };
 
 export const getBlogSlug = (post: Pick<BlogPost, 'id' | 'title' | 'slug'>): string => {
-  if (post.slug && post.slug.trim()) return slugifyBlogValue(post.slug);
+  // Preserve API slug as-is (live site routes with raw Slug), fallback to generated slug when missing.
+  if (post.slug && post.slug.trim()) return post.slug.trim();
   return slugifyBlogValue(`${post.title}-${post.id}`);
+};
+
+const mapRawBlogPost = (raw: any, fallbackSlug: string): BlogPost => {
+  const id = raw.ID ?? raw.BlogID ?? fallbackSlug;
+  const title = raw.Title ?? raw.BlogTitle ?? '';
+  const slug = String(raw.Slug ?? raw.BlogSlug ?? raw.OldSlug ?? fallbackSlug).trim();
+  const rawCategory = raw.Category ?? raw.CategoryName ?? raw.Categories;
+  const category = Array.isArray(rawCategory)
+    ? String(rawCategory[0] ?? 'General')
+    : String(rawCategory ?? 'General');
+  const htmlBody = String(raw.Blog ?? raw.Content ?? raw.Description ?? raw.LongDescription ?? raw.Body ?? '');
+  const plainBody = htmlBody.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  return {
+    id,
+    title,
+    slug: slug || slugifyBlogValue(`${title}-${id}`),
+    excerpt: String(raw.ShortDescription ?? raw.Excerpt ?? raw.Summary ?? plainBody).trim(),
+    content: htmlBody || undefined,
+    image: raw.Image ?? raw.BlogImage ?? raw.CoverImage ?? '',
+    date: raw.PublishedDate ?? raw.Date ?? raw.CreatedDate ?? '',
+    category,
+    readTime: raw.ReadTime ?? undefined,
+  };
 };
 
 export const fetchBlogPosts = async (): Promise<BlogPost[]> => {
   try {
     const data = await apiFetch('BroadwayAPI.aspx?Method=BlogListing');
     const raw: any[] = Array.isArray(data) ? data : data?.Data || data?.Blogs || [];
-    return raw.map((b: any, i: number) => {
-      const id = b.ID ?? b.BlogID ?? i;
-      const title = b.Title ?? b.BlogTitle ?? '';
-      const slug = getBlogSlug({
-        id,
-        title,
-        slug: b.Slug ?? b.BlogSlug ?? '',
-      });
-
-      return {
-        id,
-        title,
-        slug,
-        excerpt: b.ShortDescription ?? b.Excerpt ?? b.Summary ?? '',
-        content: b.Description ?? b.LongDescription ?? b.Body ?? undefined,
-        image: b.Image ?? b.BlogImage ?? b.CoverImage ?? '',
-        date: b.PublishedDate ?? b.Date ?? '',
-        category: b.Category ?? b.CategoryName ?? 'General',
-        readTime: b.ReadTime ?? undefined,
-      };
-    });
+    return raw.map((b: any, i: number) => mapRawBlogPost(b, String(i)));
   } catch {
     return [];
   }
 };
 
 export const fetchBlogPostBySlug = async (slug: string): Promise<BlogPost | null> => {
-  try {
-    const data = await apiFetch(`BroadwayAPI.aspx?Method=GetBlogBySlug&BlogSlug=${encodeURIComponent(slug)}`);
-    const raw = data?.Data?.[0] ?? data?.Data ?? data;
+  const requestedSlug = decodeURIComponent(String(slug ?? '')).trim();
+  const trySlugs = Array.from(new Set([requestedSlug, slugifyBlogValue(requestedSlug)].filter(Boolean)));
 
-    if (raw && (raw.ID || raw.BlogID || raw.Title || raw.BlogTitle)) {
-      const id = raw.ID ?? raw.BlogID ?? slug;
-      const title = raw.Title ?? raw.BlogTitle ?? '';
-      return {
-        id,
-        title,
-        slug: getBlogSlug({ id, title, slug: raw.Slug ?? raw.BlogSlug ?? slug }),
-        excerpt: raw.ShortDescription ?? raw.Excerpt ?? raw.Summary ?? '',
-        content: raw.Description ?? raw.LongDescription ?? raw.Body ?? undefined,
-        image: raw.Image ?? raw.BlogImage ?? raw.CoverImage ?? '',
-        date: raw.PublishedDate ?? raw.Date ?? '',
-        category: raw.Category ?? raw.CategoryName ?? 'General',
-        readTime: raw.ReadTime ?? undefined,
-      };
+  try {
+    for (const candidate of trySlugs) {
+      const data = await apiFetch(`BroadwayAPI.aspx?Method=GetBlogBySlug&BlogSlug=${encodeURIComponent(candidate)}`);
+      const raw = data?.Data?.[0] ?? data?.Data ?? data;
+
+      if (raw && (raw.ID || raw.BlogID || raw.Title || raw.BlogTitle)) {
+        return mapRawBlogPost(raw, candidate);
+      }
     }
   } catch {
     /* fall through to listing fallback */
   }
 
   const posts = await fetchBlogPosts();
-  const normalized = slugifyBlogValue(slug);
-  return posts.find((post) => getBlogSlug(post) === normalized) ?? null;
+  const normalizedRequested = slugifyBlogValue(requestedSlug);
+  return posts.find((post) => {
+    const rawPostSlug = String(post.slug ?? '').trim();
+    if (rawPostSlug && rawPostSlug.toLowerCase() === requestedSlug.toLowerCase()) return true;
+    return slugifyBlogValue(rawPostSlug || `${post.title}-${post.id}`) === normalizedRequested;
+  }) ?? null;
 };
 
 // ---------------------------------------------------------------------------

@@ -35,20 +35,20 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] bg-[#050505] flex flex-col animate-in slide-in-from-right duration-500 overflow-hidden">
+    <div className="fixed inset-0 z-[110] bg-gray-50 dark:bg-[#050505] flex flex-col animate-in slide-in-from-right duration-500 overflow-hidden">
       {/* Header Section */}
-      <header className="bg-[#0a0a0a]/95 backdrop-blur-2xl border-b border-white/5 shrink-0 z-20">
+      <header className="bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border-b border-neutral-200 dark:border-white/5 shrink-0 z-20">
         <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div className="flex items-center gap-5">
             <div className="w-12 h-12 bg-yellow-500 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.3)]">
               <MapIcon size={24} className="text-black" strokeWidth={3} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">Our Outlets</h1>
+              <h1 className="text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tighter leading-none">Our Outlets</h1>
               <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Find your nearest pizza paradise</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5">
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-900 dark:text-white rounded-full transition-all border border-neutral-200 dark:border-white/5">
             <X size={20} />
           </button>
         </div>
@@ -91,7 +91,7 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
               placeholder="Search branch or street..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#121212] border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white focus:outline-none focus:border-yellow-500/40 font-bold text-base md:text-sm placeholder:text-neutral-700"
+              className="w-full bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-neutral-900 dark:text-white focus:outline-none focus:border-yellow-500/40 font-bold text-base md:text-sm placeholder:text-neutral-500 dark:placeholder:text-neutral-700"
             />
           </div>
         </div>
@@ -107,14 +107,14 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
           ) : filtered.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((outlet) => (
-                <div key={outlet.id} className="bg-[#0e0e0e] border border-white/5 rounded-[2rem] p-6 group hover:border-yellow-500/20 transition-all duration-500 hover:-translate-y-1">
+                <div key={outlet.id} className="bg-white dark:bg-[#0e0e0e] border border-neutral-200 dark:border-white/5 rounded-[2rem] p-6 group hover:border-yellow-500/20 transition-all duration-500 hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-neutral-500 group-hover:text-yellow-500 transition-colors">
                       <Compass size={24} />
                     </div>
                     <span className="px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-[9px] font-black text-green-500 uppercase tracking-widest">Live</span>
                   </div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2 group-hover:text-yellow-500 transition-colors">
+                  <h3 className="text-xl font-black text-neutral-900 dark:text-white uppercase tracking-tight mb-2 group-hover:text-yellow-500 transition-colors">
                     {outlet.name}
                   </h3>
                   {outlet.address && (
@@ -128,13 +128,13 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
                       href={outlet.mapLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full h-14 bg-[#161616] hover:bg-yellow-500 text-neutral-400 hover:text-black py-4 rounded-xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 group/btn border border-white/5"
+                      className="w-full h-14 bg-neutral-100 dark:bg-[#161616] hover:bg-yellow-500 text-neutral-700 dark:text-neutral-400 hover:text-black py-4 rounded-xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 group/btn border border-neutral-200 dark:border-white/5"
                     >
                       Get Directions
                       <ArrowUpRight size={16} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                     </a>
                   ) : (
-                    <div className="w-full h-14 bg-[#161616] text-neutral-600 py-4 rounded-xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 border border-white/5">
+                    <div className="w-full h-14 bg-neutral-100 dark:bg-[#161616] text-neutral-600 dark:text-neutral-600 py-4 rounded-xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 border border-neutral-200 dark:border-white/5">
                       <MapPin size={14} /> No map link
                     </div>
                   )}
@@ -151,7 +151,7 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
       </div>
 
       {/* Footer Meta */}
-      <footer className="bg-[#0a0a0a] border-t border-white/5 p-6 shrink-0 flex items-center gap-3">
+      <footer className="bg-white dark:bg-[#0a0a0a] border-t border-neutral-200 dark:border-white/5 p-6 shrink-0 flex items-center gap-3">
         <Info size={14} className="text-neutral-600" />
         <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">Timing: 11:00 AM - 03:00 AM (Daily)</span>
       </footer>

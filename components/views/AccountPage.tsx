@@ -122,7 +122,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
   };
 
   return (
-    <div className="fixed inset-0 z-[400] bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-[400] bg-gray-50 dark:bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-bottom duration-300">
       {toastMsg && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] bg-yellow-500 text-black font-black text-sm px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4 duration-300 flex items-center gap-2">
           <Check size={16} strokeWidth={3} />
@@ -131,13 +131,13 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/10 px-4 md:px-8 py-4">
+      <header className="sticky top-0 z-50 bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-neutral-200 dark:border-white/10 px-4 md:px-8 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5">
+            <button onClick={onClose} className="p-2 rounded-full bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-900 dark:text-white transition-colors border border-neutral-200 dark:border-white/5">
               <ArrowLeft size={20} />
             </button>
-            <h1 className="text-xl font-black text-white uppercase tracking-tight italic">My Account</h1>
+            <h1 className="text-xl font-black text-neutral-900 dark:text-white uppercase tracking-tight italic">My Account</h1>
           </div>
           <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-widest transition-colors">
             <LogOut size={16} />
@@ -149,13 +149,13 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 
         {/* Profile Header Card */}
-        <div className="bg-[#121212] rounded-3xl p-6 border border-white/5 mb-8 flex items-center gap-5 relative overflow-hidden">
+        <div className="bg-white dark:bg-[#121212] rounded-3xl p-6 border border-neutral-200 dark:border-white/5 mb-8 flex items-center gap-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-500/5 rounded-full blur-[60px] pointer-events-none"></div>
           <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-yellow-500/20 ring-4 ring-[#121212] shrink-0">
             {initials}
           </div>
           <div>
-            <h2 className="text-xl font-black text-white">{user?.name}</h2>
+            <h2 className="text-xl font-black text-neutral-900 dark:text-white">{user?.name}</h2>
             <p className="text-neutral-500 text-sm font-medium">{user?.phone}</p>
             <p className="text-neutral-600 text-xs mt-0.5">{user?.email}</p>
             {customerInfo && (
@@ -183,14 +183,14 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
         </div>
 
         {/* Tab Bar */}
-        <div className="flex gap-2 mb-8 bg-[#121212] rounded-2xl p-1 border border-white/5">
+        <div className="flex gap-2 mb-8 bg-white dark:bg-[#121212] rounded-2xl p-1 border border-neutral-200 dark:border-white/5">
           <button onClick={() => setTab('orders')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all ${tab === 'orders' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-neutral-500 hover:text-white'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all ${tab === 'orders' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
           >
             <ShoppingBag size={16} /> My Orders
           </button>
           <button onClick={() => setTab('account')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all ${tab === 'account' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-neutral-500 hover:text-white'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all ${tab === 'account' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
           >
             <User size={16} /> My Account
           </button>
@@ -212,12 +212,12 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {orders.map(order => (
-                  <div key={order.id} className="bg-[#121212] rounded-2xl border border-white/5 overflow-hidden hover:border-white/10 transition-colors cursor-pointer" onClick={() => onViewOrder?.(order.id, order.encId)}>
+                  <div key={order.id} className="bg-white dark:bg-[#121212] rounded-2xl border border-neutral-200 dark:border-white/5 overflow-hidden hover:border-neutral-300 dark:hover:border-white/10 transition-colors cursor-pointer" onClick={() => onViewOrder?.(order.id, order.encId)}>
                     <div className="p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <div className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Order #{order.id}</div>
-                          <div className="text-sm font-bold text-white leading-tight mt-0.5">{order.outletName || 'Broadway Pizza'}</div>
+                          <div className="text-sm font-bold text-neutral-900 dark:text-white leading-tight mt-0.5">{order.outletName || 'Broadway Pizza'}</div>
                         </div>
                         <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide ${statusColor(order.status)}`}>
                           {order.status === 'Rejected' ? 'Cancelled' : order.status}
@@ -234,10 +234,10 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
                         </div>
                       </div>
                     </div>
-                    <div className="border-t border-white/5 flex">
+                    <div className="border-t border-neutral-200 dark:border-white/5 flex">
                       {order.feedbackUrl && (
                         <a href={order.feedbackUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 text-center py-3 text-xs font-bold text-neutral-500 hover:text-white hover:bg-white/5 transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5"
+                          className="flex-1 text-center py-3 text-xs font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5"
                         >
                           <Star size={12} /> Feedback
                         </a>
@@ -270,7 +270,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
             ) : (
               <>
                 {/* Wallet Card */}
-                <div className="bg-[#121212] rounded-3xl border border-white/5 p-6 relative overflow-hidden">
+                <div className="bg-white dark:bg-[#121212] rounded-3xl border border-neutral-200 dark:border-white/5 p-6 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent pointer-events-none"></div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -285,31 +285,31 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
                 </div>
 
                 {/* Personal Info */}
-                <div className="bg-[#121212] rounded-3xl border border-white/5 p-6">
+                <div className="bg-white dark:bg-[#121212] rounded-3xl border border-neutral-200 dark:border-white/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
                       <Edit3 size={14} className="text-black" />
                     </div>
-                    <h3 className="text-white font-bold text-lg uppercase tracking-wide">Personal Information</h3>
+                    <h3 className="text-neutral-900 dark:text-white font-bold text-lg uppercase tracking-wide">Personal Information</h3>
                   </div>
 
                   <div className="space-y-4">
                     <div>
                       <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest ml-1 mb-2 block">Full Name</label>
                       <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
-                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all"
+                        className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 px-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all"
                       />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest ml-1 mb-2 block">Email Address</label>
                       <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)}
-                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-4 px-4 text-white focus:border-yellow-500 focus:outline-none transition-all"
+                        className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-xl py-4 px-4 text-neutral-900 dark:text-white focus:border-yellow-500 focus:outline-none transition-all"
                       />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest ml-1 mb-2 block">Phone Number</label>
                       <input type="tel" value={customerInfo?.phone ?? user?.phone ?? ''} disabled
-                        className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl py-4 px-4 text-neutral-500 cursor-not-allowed"
+                        className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/5 rounded-xl py-4 px-4 text-neutral-500 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -329,7 +329,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ isOpen, onClose, onVie
                 </div>
 
                 {/* Danger Zone */}
-                <div className="bg-[#121212] rounded-3xl border border-red-500/10 p-6">
+                <div className="bg-white dark:bg-[#121212] rounded-3xl border border-red-500/10 p-6">
                   <h3 className="text-red-400 font-bold text-sm uppercase tracking-wide mb-4 flex items-center gap-2">
                     <Trash2 size={16} /> Danger Zone
                   </h3>

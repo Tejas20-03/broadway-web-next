@@ -34,17 +34,17 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[80] bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-right duration-300 custom-scrollbar">
+    <div className="fixed inset-0 z-[80] bg-gray-50 dark:bg-[#0a0a0a] overflow-y-auto animate-in slide-in-from-right duration-300 custom-scrollbar">
 
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-8 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white/85 dark:bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-neutral-200 dark:border-white/5 px-4 md:px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-2xl">🔥</span>
-          <h1 className="text-2xl font-black text-white uppercase tracking-tight italic transform -skew-x-6">Broadway Blogs</h1>
+          <h1 className="text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tight italic transform -skew-x-6">Broadway Blogs</h1>
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5 hover:rotate-90 duration-300"
+          className="p-2 rounded-full bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-900 dark:text-white transition-colors border border-neutral-200 dark:border-white/5 hover:rotate-90 duration-300"
         >
           <X size={24} />
         </button>
@@ -55,11 +55,11 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
         {/* Hero Section */}
         <div className="mb-12 text-center relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-32 bg-yellow-500/20 blur-[80px] rounded-full pointer-events-none"></div>
-          <h2 className="relative text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4 leading-none">
+          <h2 className="relative text-4xl md:text-6xl font-black text-neutral-900 dark:text-white uppercase tracking-tighter mb-4 leading-none">
             Fresh Dough.<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-500">Fresh Stories.</span>
           </h2>
-          <p className="text-neutral-400 font-medium max-w-xl mx-auto text-sm md:text-base">
+          <p className="text-neutral-600 dark:text-neutral-400 font-medium max-w-xl mx-auto text-sm md:text-base">
             Dive into the world of cheesy goodness, spicy takes, and everything happening at Broadway.
           </p>
         </div>
@@ -77,7 +77,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
 
             {/* Large Featured Post */}
             {featured && (
-              <div onClick={() => openPost(featured)} className="md:col-span-2 md:row-span-2 group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212]">
+              <div onClick={() => openPost(featured)} className="md:col-span-2 md:row-span-2 group relative rounded-3xl overflow-hidden cursor-pointer border border-neutral-200 dark:border-white/5 bg-white dark:bg-[#121212]">
                 {featured.image && (
                   <Image
                     src={featured.image}
@@ -114,7 +114,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
 
             {/* Smaller Posts */}
             {rest.map((post) => (
-              <div key={post.id} onClick={() => openPost(post)} className="group relative rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#121212] flex flex-col">
+              <div key={post.id} onClick={() => openPost(post)} className="group relative rounded-3xl overflow-hidden cursor-pointer border border-neutral-200 dark:border-white/5 bg-white dark:bg-[#121212] flex flex-col">
                 <div className="h-1/2 overflow-hidden relative">
                   {post.image && (
                     <Image
@@ -131,9 +131,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ isOpen, onClose }) => {
                     </span>
                   </div>
                 </div>
-                <div className="flex-1 p-5 flex flex-col relative z-10 bg-[#121212]">
+                <div className="flex-1 p-5 flex flex-col relative z-10 bg-white dark:bg-[#121212]">
                   <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1">{post.date}</div>
-                  <h3 className="text-lg font-black text-white leading-tight mb-2 group-hover:text-yellow-500 transition-colors">
+                  <h3 className="text-lg font-black text-neutral-900 dark:text-white leading-tight mb-2 group-hover:text-yellow-500 transition-colors">
                     {post.title}
                   </h3>
                   <p className="text-neutral-400 text-xs line-clamp-2 mb-4 flex-1">

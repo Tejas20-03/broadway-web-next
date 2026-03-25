@@ -96,15 +96,15 @@ export const OpenStreetMapPickerModal: React.FC<OpenStreetMapPickerModalProps> =
 
   return (
     <div className="fixed inset-0 z-[220] flex items-end md:items-center justify-center p-0 md:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full h-[85dvh] md:h-[80vh] md:max-w-4xl bg-[#0a0a0a] md:rounded-3xl overflow-hidden border border-white/10">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#121212]">
+      <div className="relative w-full h-[85dvh] md:h-[80vh] md:max-w-4xl bg-white dark:bg-[#0a0a0a] md:rounded-3xl overflow-hidden border border-neutral-200 dark:border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-white/10 bg-neutral-100 dark:bg-[#121212]">
           <div>
-            <h3 className="text-white font-black text-lg uppercase tracking-tight">Select on Map</h3>
+            <h3 className="text-neutral-900 dark:text-white font-black text-lg uppercase tracking-tight">Select on Map</h3>
             <p className="text-neutral-500 text-xs">Tap map or drag marker, then confirm location.</p>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center">
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-white/5 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white flex items-center justify-center">
             <X size={18} />
           </button>
         </div>
@@ -112,13 +112,13 @@ export const OpenStreetMapPickerModal: React.FC<OpenStreetMapPickerModalProps> =
         <div className="relative h-[calc(100%-132px)]">
           <div ref={mapContainerRef} className="w-full h-full" />
           {loading && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 text-white font-bold">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 text-neutral-900 dark:text-white font-bold">
               <Loader2 size={18} className="animate-spin" /> Loading map...
             </div>
           )}
         </div>
 
-        <div className="h-[68px] border-t border-white/10 bg-[#121212] px-4 flex items-center justify-between">
+        <div className="h-[68px] border-t border-neutral-200 dark:border-white/10 bg-neutral-100 dark:bg-[#121212] px-4 flex items-center justify-between">
           <p className="text-xs text-neutral-400 font-medium">
             {selectedLat.toFixed(5)}, {selectedLng.toFixed(5)}
           </p>
@@ -133,3 +133,6 @@ export const OpenStreetMapPickerModal: React.FC<OpenStreetMapPickerModalProps> =
     </div>
   );
 };
+
+
+

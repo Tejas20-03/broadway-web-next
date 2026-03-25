@@ -60,9 +60,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
       onClick={() => onAdd(product)}
       className="
         group relative flex flex-col h-full cursor-pointer
-        bg-[#0f0f0f]/80 backdrop-blur-xl
+        bg-white/90 dark:bg-[#0f0f0f]/80 backdrop-blur-xl
         rounded-[1.5rem] md:rounded-[2rem] overflow-hidden
-        border border-white/5 
+        border border-neutral-200 dark:border-white/5 
         transition-all duration-500 ease-out
         hover:border-yellow-500/30
         hover:shadow-[0_0_30px_-10px_rgba(234,179,8,0.2)]
@@ -70,7 +70,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
     >
       {/* Image Section - Edge to Edge on Mobile */}
       <div className="relative h-40 md:h-56 w-full overflow-hidden p-0 md:p-3 md:pb-0">
-        <div className="w-full h-full md:rounded-[1.5rem] overflow-hidden relative bg-[#1a1a1a]">
+        <div className="w-full h-full md:rounded-[1.5rem] overflow-hidden relative bg-neutral-100 dark:bg-[#1a1a1a]">
             <Image
               src={imageUrl}
               alt={product.name}
@@ -78,14 +78,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
               sizes="(max-width: 768px) 50vw, 25vw"
               className="object-cover transition-transform duration-1000 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-white/80 dark:from-[#0f0f0f] via-transparent to-transparent opacity-60"></div>
             <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5 z-10">
                 {renderBadges()}
             </div>
             {product.rating && (
-                <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-lg flex items-center gap-1 border border-white/10 shadow-lg z-10">
+                <div className="absolute top-2 right-2 bg-white/70 dark:bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-lg flex items-center gap-1 border border-neutral-200 dark:border-white/10 shadow-lg z-10">
                     <Star size={8} className="text-yellow-500 fill-yellow-500" />
-                    <span className="text-[9px] font-bold text-white tracking-wide">{product.rating}</span>
+                  <span className="text-[9px] font-bold text-neutral-900 dark:text-white tracking-wide">{product.rating}</span>
                 </div>
             )}
         </div>
@@ -93,10 +93,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
 
       {/* Content Section - Reduced Padding for Mobile */}
       <div className="flex flex-col flex-1 px-2.5 pb-2.5 pt-2 md:px-5 md:pb-5 md:pt-3 relative z-10">
-        <h3 className="text-white text-sm md:text-[17px] font-black leading-tight group-hover:text-yellow-500 transition-colors line-clamp-1 tracking-tight">
+        <h3 className="text-neutral-900 dark:text-white text-sm md:text-[17px] font-black leading-tight group-hover:text-yellow-500 transition-colors line-clamp-1 tracking-tight">
           {product.name}
         </h3>
-        <p className="text-neutral-500 text-[9px] md:text-xs leading-relaxed line-clamp-1 md:line-clamp-2 mt-1 font-medium">
+        <p className="text-neutral-600 dark:text-neutral-500 text-[9px] md:text-xs leading-relaxed line-clamp-1 md:line-clamp-2 mt-1 font-medium">
           {product.description || "Freshly baked with premium ingredients."}
         </p>
 
@@ -109,12 +109,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
                 )}
                 <div className="flex items-baseline gap-0.5">
                     <span className="text-yellow-500 text-[9px] md:text-xs font-bold">Rs.</span>
-                    <span className="text-white text-lg md:text-2xl font-black tracking-tighter">
+                    <span className="text-neutral-900 dark:text-white text-lg md:text-2xl font-black tracking-tighter">
                         {displayPrice}
                     </span>
                 </div>
             </div>
-            <button className="w-8 h-8 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-[#1a1a1a] to-[#252525] text-white border border-white/10 flex items-center justify-center transition-all hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]">
+                <button className="w-8 h-8 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-[#1a1a1a] dark:to-[#252525] text-neutral-900 dark:text-white border border-neutral-200 dark:border-white/10 flex items-center justify-center transition-all hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]">
                 <Plus size={16} strokeWidth={3} className="md:w-5 md:h-5" />
             </button>
         </div>

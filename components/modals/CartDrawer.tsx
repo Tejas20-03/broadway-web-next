@@ -142,15 +142,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[250] transition-opacity"
+        className="fixed inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-md z-[250] transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer - Higher Z-index than Modal */}
-      <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#0a0a0a] border-l border-white/10 z-[300] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-slide-in">
+      <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-white dark:bg-[#0a0a0a] border-l border-neutral-200 dark:border-white/10 z-[300] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-slide-in">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between bg-[#121212]">
+        <div className="px-6 py-5 border-b border-neutral-200 dark:border-white/10 flex items-center justify-between bg-neutral-100 dark:bg-[#121212]">
           <div className="flex items-center gap-3">
             <div className="relative">
                 <ShoppingBag className="text-yellow-500" size={24} />
@@ -158,9 +158,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
                 </span>
             </div>
-            <h2 className="text-xl font-black text-white tracking-tight uppercase italic">Order Summary</h2>
+            <h2 className="text-xl font-black text-neutral-900 dark:text-white tracking-tight uppercase italic">Order Summary</h2>
           </div>
-          <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
+          <button onClick={onClose} className="p-2 text-neutral-400 hover:text-neutral-900 dark:text-white rounded-full hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -171,7 +171,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             {cartItems.length === 0 ? (
                 <div className="h-64 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
                     <ShoppingBag size={64} className="text-neutral-600" />
-                    <p className="text-neutral-400 font-medium">Your cart is empty</p>
+                    <p className="text-neutral-600 dark:text-neutral-400 font-medium">Your cart is empty</p>
                     <button onClick={onClose} className="text-yellow-500 font-bold hover:underline">
                         Explore Menu
                     </button>
@@ -184,7 +184,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                     return (
                         <div key={item.cartId} className="flex gap-4 group">
-                            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 relative">
+                            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-neutral-200 dark:border-white/10 relative">
                                 <Image
                                     src={item.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591'}
                                     alt={item.name}
@@ -196,7 +196,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                             <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                                 <div>
                                     <div className="flex justify-between items-start mb-1">
-                                        <h3 className="font-bold text-white text-sm truncate pr-2">{item.name}</h3>
+                                        <h3 className="font-bold text-neutral-900 dark:text-white text-sm truncate pr-2">{item.name}</h3>
                                         <span className="font-bold text-yellow-500 text-sm whitespace-nowrap">Rs. {item.price * item.quantity}</span>
                                     </div>
                                     <div className="text-[10px] text-neutral-500 leading-tight">
@@ -206,17 +206,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 bg-[#1a1a1a] rounded-lg p-1 w-fit mt-2 border border-white/5">
+                                <div className="flex items-center gap-3 bg-neutral-100 dark:bg-[#1a1a1a] rounded-lg p-1 w-fit mt-2 border border-neutral-200 dark:border-white/5">
                                     <button 
                                         onClick={() => updateQuantity(item.cartId, -1)}
-                                        className="w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                        className="w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-white/10 rounded transition-colors"
                                     >
                                         {item.quantity === 1 ? <Trash2 size={14} className="text-red-500" /> : <Minus size={14} />}
                                     </button>
-                                    <span className="text-xs font-bold text-white w-4 text-center">{item.quantity}</span>
+                                    <span className="text-xs font-bold text-neutral-900 dark:text-white w-4 text-center">{item.quantity}</span>
                                     <button 
                                         onClick={() => updateQuantity(item.cartId, 1)}
-                                        className="w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                        className="w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-white/10 rounded transition-colors"
                                     >
                                         <Plus size={14} />
                                     </button>
@@ -229,16 +229,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </div>
 
           {cartItems.length > 0 && visibleSuggestive.length > 0 && (
-              <div className="mt-auto border-t border-dashed border-white/10 pt-6 pb-6 bg-[#0e0e0e]">
+              <div className="mt-auto border-t border-dashed border-neutral-200 dark:border-white/10 pt-6 pb-6 bg-neutral-50 dark:bg-[#0e0e0e]">
                   <div className="px-6 mb-3 flex items-center gap-2">
                       <PlusCircle size={16} className="text-yellow-500" />
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">Complete your meal</h3>
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-white uppercase tracking-wider">Complete your meal</h3>
                   </div>
                   <div className="flex overflow-x-auto gap-3 px-6 pb-2 no-scrollbar snap-x">
                       {visibleSuggestive.map(item => (
                           <div 
                             key={item.itemId} 
-                            className="snap-start shrink-0 w-36 bg-[#1a1a1a] rounded-xl overflow-hidden border border-white/5 flex flex-col group cursor-pointer hover:border-yellow-500/50 transition-colors"
+                            className="snap-start shrink-0 w-36 bg-neutral-100 dark:bg-[#1a1a1a] rounded-xl overflow-hidden border border-neutral-200 dark:border-white/5 flex flex-col group cursor-pointer hover:border-yellow-500/50 transition-colors"
                             onClick={() => handleQuickAdd(item)}
                           >
                               <div className="h-24 w-full relative">
@@ -249,12 +249,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                     sizes="144px"
                                     className="object-cover"
                                   />
-                                  <div className="absolute top-1 right-1 bg-black/60 backdrop-blur rounded-full p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute top-1 right-1 bg-black/60 backdrop-blur rounded-full p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                       <Plus size={14} strokeWidth={3} />
                                   </div>
                               </div>
                               <div className="p-2.5 flex flex-col flex-1">
-                                  <h4 className="text-xs font-bold text-white line-clamp-1 mb-1">{item.name}</h4>
+                                  <h4 className="text-xs font-bold text-neutral-900 dark:text-white line-clamp-1 mb-1">{item.name}</h4>
                                   <div className="mt-auto flex justify-between items-center">
                                       <span className="text-xs font-bold text-yellow-500">Rs. {item.price}</span>
                                   </div>
@@ -267,12 +267,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         </div>
 
         {cartItems.length > 0 && (
-          <div className="bg-[#121212] border-t border-white/10 p-6 space-y-4 shrink-0 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] z-20">
-            <div className="border border-dashed border-white/20 rounded-xl overflow-hidden bg-[#0a0a0a] transition-all duration-300">
+          <div className="bg-neutral-100 dark:bg-[#121212] border-t border-neutral-200 dark:border-white/10 p-6 space-y-4 shrink-0 shadow-[0_-5px_20px_rgba(148,163,184,0.25)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.5)] z-20">
+            <div className="border border-dashed border-neutral-300 dark:border-white/20 rounded-xl overflow-hidden bg-white dark:bg-[#0a0a0a] transition-all duration-300">
                 {!isVoucherOpen && !appliedVoucher ? (
                     <button 
                         onClick={() => setIsVoucherOpen(true)}
-                        className="w-full py-3 px-4 flex items-center justify-between text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="w-full py-3 px-4 flex items-center justify-between text-neutral-400 hover:text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"
                     >
                         <div className="flex items-center gap-2">
                             <TicketPercent size={18} className="text-yellow-500" />
@@ -285,11 +285,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                          <div className="flex items-center gap-2">
                             <CheckCircle2 size={18} className="text-green-500" />
                             <div className="flex flex-col">
-                                <span className="text-sm font-bold text-white uppercase tracking-wider">{appliedVoucher}</span>
+                                <span className="text-sm font-bold text-neutral-900 dark:text-white uppercase tracking-wider">{appliedVoucher}</span>
                                 <span className="text-[10px] text-green-500 font-bold">Coupon Applied</span>
                             </div>
                         </div>
-                        <button onClick={() => { setAppliedVoucher(null); setAppliedVoucherAmount(0); }} className="text-xs text-neutral-500 hover:text-white underline">Remove</button>
+                        <button onClick={() => { setAppliedVoucher(null); setAppliedVoucherAmount(0); }} className="text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white underline">Remove</button>
                     </div>
                 ) : (
                     <div className="p-2 flex flex-col gap-2 animate-in slide-in-from-top-2">
@@ -298,7 +298,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                 type="text" 
                                 autoFocus
                                 placeholder="Enter Code" 
-                                className={`flex-1 bg-[#1a1a1a] border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-500 uppercase placeholder:normal-case ${voucherError ? 'border-red-500' : 'border-white/10'}`}
+                                className={`flex-1 bg-neutral-100 dark:bg-[#1a1a1a] border rounded-lg px-3 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-yellow-500 uppercase placeholder:normal-case ${voucherError ? 'border-red-500' : 'border-neutral-200 dark:border-white/10'}`}
                                 value={voucherCode}
                                 onChange={(e) => { setVoucherCode(e.target.value); if (voucherError) setVoucherError(''); }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
@@ -312,7 +312,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                             </button>
                             <button 
                                 onClick={() => { setIsVoucherOpen(false); setVoucherError(''); }}
-                                className="p-2 text-neutral-500 hover:text-white"
+                                className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
                             >
                                 <X size={18} />
                             </button>
@@ -348,7 +348,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span>Delivery Fee</span>
                 <span>{deliveryFee > 0 ? `Rs. ${deliveryFee}` : 'Free'}</span>
               </div>
-              <div className="flex justify-between items-end text-white pt-3 border-t border-white/10 mt-2">
+              <div className="flex justify-between items-end text-neutral-900 dark:text-white pt-3 border-t border-neutral-200 dark:border-white/10 mt-2">
                 <span className="font-medium text-neutral-400 uppercase tracking-widest text-[10px] font-black">Total Payable</span>
                 <span className="font-black text-2xl text-yellow-500">Rs. {total}</span>
               </div>
@@ -364,7 +364,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <button 
                 onClick={() => onCheckout(appliedVoucher ?? '', appliedVoucherAmount)}
                 disabled={!allowOrder}
-                className="w-full bg-yellow-500 text-white font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all hover:scale-[1.01] shadow-[0_4px_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-yellow-500"
+                className="w-full bg-yellow-500 text-neutral-900 dark:text-white font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all hover:scale-[1.01] shadow-[0_4px_20px_rgba(234,179,8,0.2)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-yellow-500"
             >
               <span>CHECKOUT</span>
               <ArrowRight size={20} strokeWidth={3} />
@@ -375,4 +375,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     </>
   );
 };
+
+
+
 
