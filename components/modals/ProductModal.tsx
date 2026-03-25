@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { X, Minus, Plus, Check, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Product, ProductSize, ProductOption, ProductOptionGroup } from '@/types';
@@ -19,7 +19,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, ProductOption[]>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [resolvedProduct, setResolvedProduct] = useState<Product | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const groupRefs = useRef<Record<string, HTMLElement | null>>({});
+  const addToCartRef = useRef<HTMLButtonElement | null>(null);
 
   // RTK Query — cached, no duplicate requests for the same product
   const { data: optionData, isFetching: isLoadingOptions } = useGetProductOptionsQuery(
@@ -47,20 +51,48 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
       ?? [];
     const defaults: Record<string, ProductOption[]> = {};
     groups.forEach(group => {
-      if (group.options.length > 0 && group.maxSelection === 1) {
+      // Do not auto-pick required groups; wait for user choice so guided flow can trigger naturally.
+      if (group.options.length > 0 && group.maxSelection === 1 && group.minSelection === 0) {
         defaults[group.id] = [group.options[0]];
       }
     });
     setSelectedOptions(defaults);
+    setCollapsedGroups({});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSize?.id, resolvedProduct?.sizeOptionGroups, resolvedProduct?.optionGroups]);
 
+  const activeGroups: ProductOptionGroup[] =
+    (selectedSize && resolvedProduct?.sizeOptionGroups?.[selectedSize.id])
+    ?? resolvedProduct?.optionGroups
+    ?? [];
+
+  const mandatoryGroups = useMemo(
+    () => activeGroups.filter(group => group.minSelection > 0),
+    [activeGroups],
+  );
+
   if (!isOpen || !resolvedProduct) return null;
 
-  const activeGroups: ProductOptionGroup[] =
-    (selectedSize && resolvedProduct.sizeOptionGroups?.[selectedSize.id])
-    ?? resolvedProduct.optionGroups
-    ?? [];
+  const scrollToGroup = (groupId: string) => {
+    const container = scrollContainerRef.current;
+    const groupEl = groupRefs.current[groupId];
+    if (!container || !groupEl) return;
+    const containerRect = container.getBoundingClientRect();
+    const groupRect = groupEl.getBoundingClientRect();
+    const targetTop = container.scrollTop + (groupRect.top - containerRect.top) - 12;
+    container.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: 'smooth',
+    });
+  };
+
+  const scrollToAddToCart = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+    addToCartRef.current?.focus({ preventScroll: true });
+  };
 
   // Price = selected size price (or basePrice) + sum of all selected option prices.
   // Use DeliveryPrice for delivery orders, TakeAwayPrice for pickup — matching Cordova.
@@ -87,19 +119,57 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
     resolvedProduct.sizes.every(s => s.label === '-');
 
   const toggleOption = (groupId: string, option: ProductOption, maxSelection: number) => {
-    setSelectedOptions(prev => {
-      const current = prev[groupId] ?? [];
-      const alreadySelected = current.some(o => o.id === option.id);
-      if (alreadySelected) {
-        const group = activeGroups.find(g => g.id === groupId);
-        if (group && group.minSelection > 0 && current.length <= 1) return prev;
-        return { ...prev, [groupId]: current.filter(o => o.id !== option.id) };
-      }
-      if (maxSelection === 1) {
-        return { ...prev, [groupId]: [option] };
-      }
-      if (maxSelection > 1 && current.length >= maxSelection) return prev;
-      return { ...prev, [groupId]: [...current, option] };
+    const group = activeGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const current = selectedOptions[groupId] ?? [];
+    const alreadySelected = current.some(o => o.id === option.id);
+    const wasSelecting = !alreadySelected;
+    let nextCurrent = current;
+
+    if (alreadySelected) {
+      if (group.minSelection > 0 && current.length <= 1) return;
+      nextCurrent = current.filter(o => o.id !== option.id);
+    } else if (maxSelection === 1) {
+      nextCurrent = [option];
+    } else {
+      if (maxSelection > 1 && current.length >= maxSelection) return;
+      nextCurrent = [...current, option];
+    }
+
+    const nextSelectedOptions = { ...selectedOptions, [groupId]: nextCurrent };
+    setSelectedOptions(nextSelectedOptions);
+
+    const isSatisfiedNow = nextCurrent.length >= group.minSelection;
+    const becameSatisfied =
+      group.minSelection > 0
+      && current.length < group.minSelection
+      && isSatisfiedNow;
+
+    const selectedWhileAlreadySatisfied =
+      group.minSelection > 0
+      && wasSelecting
+      && isSatisfiedNow;
+
+    if (!becameSatisfied && !selectedWhileAlreadySatisfied) return;
+
+    setCollapsedGroups(prev => ({ ...prev, [groupId]: true }));
+
+    const currentMandatoryIndex = mandatoryGroups.findIndex(g => g.id === groupId);
+    const nextMandatory = mandatoryGroups.slice(currentMandatoryIndex + 1).find(nextGroup => {
+      const picked = nextSelectedOptions[nextGroup.id]?.length ?? 0;
+      return picked < nextGroup.minSelection;
+    });
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (nextMandatory) {
+          setCollapsedGroups(prev => ({ ...prev, [nextMandatory.id]: false }));
+          scrollToGroup(nextMandatory.id);
+        } else {
+          scrollToAddToCart();
+        }
+      });
     });
   };
 
@@ -152,7 +222,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
 
         {/* RIGHT PANEL — options */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#0a0a0a] relative overflow-hidden h-full">
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
 
             {/* Mobile image */}
             <div className="md:hidden relative w-full h-72 bg-[#121212] shrink-0">
@@ -225,19 +295,33 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
                   const isMulti = group.maxSelection !== 1;
                   const currentSelected = selectedOptions[group.id] ?? [];
                   const hasImages = group.options.some(o => o.image);
+                  const isCollapsed = collapsedGroups[group.id] ?? false;
 
                   return (
-                    <section key={group.id}>
-                      <div className="flex items-center gap-2 mb-4">
+                    <section
+                      key={group.id}
+                      ref={(el) => {
+                        groupRefs.current[group.id] = el;
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setCollapsedGroups(prev => ({ ...prev, [group.id]: !isCollapsed }))}
+                        className="w-full flex items-center gap-2 mb-4 text-left"
+                      >
                         <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-yellow-500 text-white flex items-center justify-center font-bold text-[10px] md:text-xs">{stepNum}</span>
                         <h3 className="text-base md:text-lg font-bold text-white uppercase tracking-wider">{group.name}</h3>
                         {group.minSelection > 0 && <span className="text-red-500 text-lg leading-none">*</span>}
                         {isMulti && group.maxSelection > 1 && group.maxSelection < 99 && (
                           <span className="text-[10px] text-neutral-500 font-medium ml-1">(max {group.maxSelection})</span>
                         )}
-                      </div>
+                        <ChevronRight
+                          size={16}
+                          className={`ml-auto text-neutral-400 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                        />
+                      </button>
 
-                      {hasImages ? (
+                      {!isCollapsed && (hasImages ? (
                         <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
                           {group.options.map(option => {
                             const active = currentSelected.some(o => o.id === option.id);
@@ -281,7 +365,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
                             );
                           })}
                         </div>
-                      )}
+                      ))}
                     </section>
                   );
                 })}
@@ -302,7 +386,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
                   <Plus size={18} className="md:w-5 md:h-5" />
                 </button>
               </div>
-              <button onClick={handleAddToCart}
+              <button
+                ref={addToCartRef}
+                onClick={handleAddToCart}
                 className="flex-1 h-[52px] md:h-[60px] bg-yellow-500 hover:bg-yellow-400 text-white rounded-xl md:rounded-2xl font-black text-base md:text-lg flex items-center justify-between px-4 md:px-8 shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all transform hover:scale-[1.02] active:scale-95"
               >
                 <span className="flex items-center gap-1 md:gap-2">ADD <ChevronRight size={18} className="md:w-5 md:h-5" strokeWidth={3} /></span>
