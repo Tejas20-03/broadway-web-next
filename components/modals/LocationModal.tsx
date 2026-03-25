@@ -24,17 +24,17 @@ interface LocationModalProps {
 }
 
 export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, onOpenLogin, onPendingOrders }) => {
-  const { location, setOrderType, setCity, setArea, setOutlet, setDeliveryFees } = useLocation();
+  const { location, hasSetLocation, setOrderType, setCity, setArea, setOutlet, setDeliveryFees } = useLocation();
   const { cartItems, clearCart } = useCart();
   const { user } = useUser();
   const dispatch = useAppDispatch();
 
   // Local draft state — only committed to context on Save
   const [mode, setMode] = useState<OrderType>(location.orderType);
-  const [draftCity, setDraftCity] = useState(location.city);
-  const [draftArea, setDraftArea] = useState(location.area);
-  const [draftOutlet, setDraftOutlet] = useState(location.outlet);
-  const [draftOutletId, setDraftOutletId] = useState(location.outletId);
+  const [draftCity, setDraftCity] = useState(hasSetLocation ? location.city : '');
+  const [draftArea, setDraftArea] = useState(hasSetLocation ? location.area : '');
+  const [draftOutlet, setDraftOutlet] = useState(hasSetLocation ? location.outlet : '');
+  const [draftOutletId, setDraftOutletId] = useState(hasSetLocation ? location.outletId : '');
   const [draftPhone, setDraftPhone] = useState('');
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [isAreaModalOpen, setIsAreaModalOpen] = useState(false);
@@ -61,10 +61,10 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
   useEffect(() => {
     if (isOpen) {
       setMode(location.orderType);
-      setDraftCity(location.city);
-      setDraftArea(location.area);
-      setDraftOutlet(location.outlet);
-      setDraftOutletId(location.outletId);
+      setDraftCity(hasSetLocation ? location.city : '');
+      setDraftArea(hasSetLocation ? location.area : '');
+      setDraftOutlet(hasSetLocation ? location.outlet : '');
+      setDraftOutletId(hasSetLocation ? location.outletId : '');
       setDraftPhone('');
       setAreaSearch('');
       setStep('location');
@@ -72,7 +72,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       setIsAreaModalOpen(false);
       setGeoError('');
     }
-  }, [isOpen, location]);
+  }, [isOpen, location, hasSetLocation]);
 
   // Fetch areas / outlets live from API based on draft city
   const { areas, isLoading: areasLoading } = useAreas(mode === 'delivery' ? draftCity : '');
@@ -228,6 +228,8 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
 
   if (!isOpen) return null;
 
+  const hasSelectedCity = draftCity.trim().length > 0;
+
   const displayLocation = mode === 'delivery'
     ? `${draftCity}${draftArea ? ` — ${draftArea}` : ''}`
     : `${draftOutlet || draftCity}`;
@@ -377,19 +379,6 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
               </p>
             )}
 
-            {mode === 'delivery' && (
-              <button
-                onClick={() => setIsMapPickerOpen(true)}
-                className="group w-full bg-[#0a0a0a] border border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
-              >
-                <div>
-                  <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Map</p>
-                  <p className="text-white font-bold">Select on Map</p>
-                </div>
-                <ChevronRight size={16} className="text-neutral-500 group-hover:text-yellow-500 transition-colors" />
-              </button>
-            )}
-
             {/* City Row */}
             <div
               onClick={() => setIsCityModalOpen(true)}
@@ -397,13 +386,15 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
             >
               <div>
                 <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">City</p>
-                <p className="text-white font-bold">{draftCity}</p>
+                <p className={`font-bold ${hasSelectedCity ? 'text-white' : 'text-neutral-500'}`}>
+                  {draftCity || 'Select'}
+                </p>
               </div>
               <ChevronRight size={16} className="text-neutral-500 group-hover:text-yellow-500 transition-colors" />
             </div>
 
             {/* Area Row (delivery) */}
-            {mode === 'delivery' && (
+            {mode === 'delivery' && hasSelectedCity && (
               <div
                 onClick={() => setIsAreaModalOpen(true)}
                 className="group w-full bg-[#0a0a0a] border border-white/10 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all mb-4"
@@ -544,7 +535,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
             {/* Save Button */}
             <button
               onClick={handleSave}
-              disabled={(mode === 'delivery' ? (!draftArea || (!user?.phone && draftPhone.trim().length < 10)) : !draftOutletId)}
+              disabled={(mode === 'delivery' ? (!hasSelectedCity || !draftArea || (!user?.phone && draftPhone.trim().length < 10)) : (!hasSelectedCity || !draftOutletId))}
               className="w-full mt-6 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2"
             >
               <Navigation size={20} fill="white" strokeWidth={0} />
