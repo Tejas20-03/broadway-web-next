@@ -491,7 +491,7 @@ export const placeOrder = async (
     const data = await res.json();
     if (data?.ResponseType === 1 || data?.responseType === 1 || data?.OrderID) {
       const orderId = String(data.OrderID ?? data.orderId ?? '');
-      const encOrderId = decodeURIComponent(String(data.EncOrderID ?? ''));
+      const encOrderId = String(data.EncOrderID ?? '');
       const deliveryTime = String(data.DeliveryTime ?? '');
       const orderAmount = data.OrderAmount ?? undefined;
       // Cordova: if data.URL != '' → redirect to payment gateway (card payments)
@@ -616,7 +616,7 @@ export const fetchMyOrders = async (phone: string): Promise<Order[]> => {
     if (String(data?.ResponseType) === '1' && Array.isArray(data?.Data)) {
       return data.Data.map((o: any) => ({
         id: String(o.ID ?? o.OrderID ?? ''),
-        encId: decodeURIComponent(String(o.EncOrderID ?? o.ID ?? '')),
+        encId: String(o.EncOrderID ?? o.ID ?? ''),
         amount: parseFloat(o.OrderAmount ?? '0'),
         date: o.Created ?? '',
         outletName: o.OutletName ?? '',
@@ -753,7 +753,7 @@ export const fetchPendingOrders = async (phone: string): Promise<PendingOrder[]>
     if (String(data?.ResponseType) === '1' && Array.isArray(data?.Data)) {
       return data.Data.map((o: any) => ({
         id: String(o.ID ?? ''),
-        encId: decodeURIComponent(String(o.EncOrderID ?? '')),
+        encId: String(o.EncOrderID ?? ''),
         amount: parseFloat(o.OrderAmount ?? '0'),
         status: o.Status ?? 'Pending',
       }));
@@ -1123,13 +1123,7 @@ export type OrderStatusPhase = 'Pending' | 'Confirmed' | 'Preparing' | 'Out for 
 
 function normalizeOrderId(orderId: string): string {
   const raw = String(orderId ?? '').trim();
-  if (!raw) return '';
-
-  try {
-    return decodeURIComponent(raw).replace(/=+$/g, '');
-  } catch {
-    return raw.replace(/=+$/g, '');
-  }
+  return raw;
 }
 
 export interface OrderStatus {
