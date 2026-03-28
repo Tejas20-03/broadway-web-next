@@ -116,14 +116,14 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
   // Cancelled order overlay
   if (phase === 'rejected') {
     return (
-    <div className="fixed inset-0 z-[500] bg-gray-50 flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 z-[500] bg-gray-50 dark:bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
         {toastEl}
         <XCircle size={80} className="text-red-500 mb-6" />
-        <h1 className="text-3xl font-black text-neutral-900 uppercase mb-3">Order Cancelled</h1>
-        <p className="text-neutral-400 text-center mb-2">
+        <h1 className="text-3xl font-black text-neutral-900 dark:text-white uppercase mb-3">Order Cancelled</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 text-center mb-2">
           We&apos;re sorry, your order #{displayOrderId} has been cancelled.
         </p>
-        <p className="text-neutral-500 text-sm text-center mb-8">Please call 111-339-339 for further details.</p>
+        <p className="text-neutral-600 dark:text-neutral-500 text-sm text-center mb-8">Please call 111-339-339 for further details.</p>
         <button
           onClick={onClose}
           className="bg-yellow-500 text-black font-black px-8 py-4 rounded-xl uppercase tracking-widest hover:bg-yellow-400 transition-colors"
@@ -149,7 +149,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     : '25-35 MINS';
 
   return (
-    <div className="fixed inset-0 z-[500] bg-gray-50 overflow-y-auto animate-in zoom-in-95 duration-500 custom-scrollbar flex flex-col items-center">
+    <div className="fixed inset-0 z-[500] bg-gray-50 dark:bg-[#0a0a0a] overflow-y-auto animate-in zoom-in-95 duration-500 custom-scrollbar flex flex-col items-center">
       {toastEl}
       
       {/* Background Ambient Glow */}
@@ -159,25 +159,25 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         
         {/* Success Header */}
         <div className="text-center mb-12 animate-in slide-in-from-bottom-5 duration-700 delay-100">
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-neutral-100 rounded-full mx-auto mb-6 flex items-center justify-center border-4 border-neutral-300 shadow-[0_0_40px_rgba(234,179,8,0.2)] relative">
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-neutral-100 dark:bg-[#121212] rounded-full mx-auto mb-6 flex items-center justify-center border-4 border-neutral-300 dark:border-white/10 shadow-[0_0_40px_rgba(234,179,8,0.2)] relative">
                 <div className="absolute inset-0 border-4 border-yellow-500 rounded-full border-t-transparent animate-spin duration-[3000ms]"></div>
                 <ChefHat size={48} className="text-yellow-500 animate-pulse" strokeWidth={1.5} />
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-neutral-900 tracking-tight mb-2 uppercase italic">Mission Accomplished!</h1>
-            <p className="text-neutral-400 text-sm md:text-lg font-medium">Your order is being crafted with perfection.</p>
+            <h1 className="text-3xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tight mb-2 uppercase italic">Mission Accomplished!</h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm md:text-lg font-medium">Your order is being crafted with perfection.</p>
         </div>
 
         {/* Info Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-in slide-in-from-bottom-5 duration-700 delay-200">
             {/* Order # */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
-                <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">Order Ref</span>
+            <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
+                <span className="text-neutral-500 dark:text-neutral-400 text-[10px] font-black uppercase tracking-widest mb-1">Order Ref</span>
                 <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black text-neutral-900 tracking-tight">#{displayOrderId ?? '\u2014'}</span>
+                    <span className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">#{displayOrderId ?? '\u2014'}</span>
                     {displayOrderId && (
                         <button
                             onClick={() => navigator.clipboard.writeText(displayOrderId)}
-                            className="text-neutral-500 hover:text-yellow-500 transition-colors"
+                            className="text-neutral-500 dark:text-neutral-400 hover:text-yellow-500 transition-colors"
                         >
                             <Copy size={14} />
                         </button>
@@ -186,8 +186,8 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
             </div>
 
             {/* Time */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
-                <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">
+            <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
+                <span className="text-neutral-500 dark:text-neutral-400 text-[10px] font-black uppercase tracking-widest mb-1">
                     {isPickup ? 'Ready In' : 'Arrival Window'}
                 </span>
                 <div className="flex items-center gap-2 text-yellow-500">
@@ -197,9 +197,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
             </div>
 
             {/* Total */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
-                <span className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-1">Payment Success</span>
-                <span className="text-2xl font-black text-neutral-900 tracking-tight">Rs. {reOrderData?.orderAmount ?? '—'}</span>
+            <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
+                <span className="text-neutral-500 dark:text-neutral-400 text-[10px] font-black uppercase tracking-widest mb-1">Payment Success</span>
+                <span className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">Rs. {reOrderData?.orderAmount ?? '—'}</span>
             </div>
         </div>
 
@@ -210,9 +210,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
             <div className="lg:col-span-3 space-y-6">
                 
                 {/* Progress Tracker */}
-                <div className="bg-white border border-neutral-200 rounded-3xl p-6 md:p-8">
+                <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-3xl p-6 md:p-8">
                     <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-lg font-bold text-neutral-900 uppercase tracking-wide">Live Status</h3>
+                        <h3 className="text-lg font-bold text-neutral-900 dark:text-white uppercase tracking-wide">Live Status</h3>
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse ${
                             phase === 'delivered'
                                 ? 'bg-green-500/10 text-green-400 border border-green-500/20'
@@ -223,7 +223,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                     </div>
 
                     <div className="relative flex justify-between px-2">
-                        <div className="absolute top-[14px] left-0 w-full h-1 bg-neutral-300 rounded-full z-0"></div>
+                        <div className="absolute top-[14px] left-0 w-full h-1 bg-neutral-300 dark:bg-white/10 rounded-full z-0"></div>
                         <div
                             className="absolute top-[14px] left-0 h-1 bg-yellow-500 rounded-full z-0 transition-all duration-1000"
                             style={{ width: progressWidth }}
@@ -231,37 +231,37 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
                         {/* Placed */}
                         <div className="relative z-10 flex flex-col items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center border-4 border-[#121212] shadow-[0_0_15px_rgba(234,179,8,0.5)]">
+                            <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center border-4 border-white dark:border-[#121212] shadow-[0_0_15px_rgba(234,179,8,0.5)]">
                                 <Check size={16} className="text-black" strokeWidth={4} />
                             </div>
-                            <span className="text-[8px] font-black text-neutral-900 uppercase">Placed</span>
+                            <span className="text-[8px] font-black text-neutral-900 dark:text-white uppercase">Placed</span>
                         </div>
 
                         {/* Prep */}
                         <div className={`relative z-10 flex flex-col items-center gap-2 transition-opacity ${phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered' ? 'opacity-100' : 'opacity-30'}`}>
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
                                 phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered'
-                                    ? 'bg-white border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
-                                    : 'bg-neutral-100 border-neutral-300'
+                                    ? 'bg-white dark:bg-[#121212] border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                                    : 'bg-neutral-100 dark:bg-[#0a0a0a] border-neutral-300 dark:border-white/10'
                             }`}>
-                                <ChefHat size={18} className={phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500'} />
+                                <ChefHat size={18} className={phase === 'preparing' || phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500 dark:text-neutral-400'} />
                             </div>
-                            <span className={`text-[8px] font-black uppercase ${phase === 'preparing' ? 'text-yellow-500' : 'text-neutral-500'}`}>Prep</span>
+                            <span className={`text-[8px] font-black uppercase ${phase === 'preparing' ? 'text-yellow-500' : 'text-neutral-500 dark:text-neutral-400'}`}>Prep</span>
                         </div>
 
                         {/* Transit / Ready */}
                         <div className={`relative z-10 flex flex-col items-center gap-2 transition-opacity ${phase === 'onTheWay' || phase === 'delivered' ? 'opacity-100' : 'opacity-30'}`}>
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
                                 phase === 'onTheWay' || phase === 'delivered'
-                                    ? 'bg-white border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
-                                    : 'bg-neutral-100 border-neutral-300'
+                                    ? 'bg-white dark:bg-[#121212] border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                                    : 'bg-neutral-100 dark:bg-[#0a0a0a] border-neutral-300 dark:border-white/10'
                             }`}>
                                 {isPickup
-                                    ? <ShoppingBag size={18} className={phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500'} />
-                                    : <Bike size={18} className={phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500'} />
+                                    ? <ShoppingBag size={18} className={phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500 dark:text-neutral-400'} />
+                                    : <Bike size={18} className={phase === 'onTheWay' || phase === 'delivered' ? 'text-yellow-500' : 'text-neutral-500 dark:text-neutral-400'} />
                                 }
                             </div>
-                            <span className={`text-[8px] font-black uppercase ${phase === 'onTheWay' ? 'text-yellow-500' : 'text-neutral-500'}`}>
+                            <span className={`text-[8px] font-black uppercase ${phase === 'onTheWay' ? 'text-yellow-500' : 'text-neutral-500 dark:text-neutral-400'}`}>
                                 {isPickup ? 'Ready' : 'Transit'}
                             </span>
                         </div>
@@ -270,29 +270,29 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                         <div className={`relative z-10 flex flex-col items-center gap-2 transition-opacity ${phase === 'delivered' ? 'opacity-100' : 'opacity-30'}`}>
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                                 phase === 'delivered'
-                                    ? 'bg-green-500 border-4 border-[#121212] shadow-[0_0_15px_rgba(74,222,128,0.4)]'
-                                    : 'bg-neutral-100 border-2 border-neutral-300'
+                                    ? 'bg-green-500 border-4 border-white dark:border-[#121212] shadow-[0_0_15px_rgba(74,222,128,0.4)]'
+                                    : 'bg-neutral-100 dark:bg-[#0a0a0a] border-2 border-neutral-300 dark:border-white/10'
                             }`}>
                                 {phase === 'delivered'
                                     ? <Check size={16} className="text-black" strokeWidth={4} />
-                                    : <Home size={18} className="text-neutral-500" />
+                                    : <Home size={18} className="text-neutral-500 dark:text-neutral-400" />
                                 }
                             </div>
-                            <span className={`text-[8px] font-black uppercase ${phase === 'delivered' ? 'text-green-400' : 'text-neutral-500'}`}>Done</span>
+                            <span className={`text-[8px] font-black uppercase ${phase === 'delivered' ? 'text-green-400' : 'text-neutral-500 dark:text-neutral-400'}`}>Done</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Rider Info (delivery only, shown when API provides it) */}
                 {!isPickup && (reOrderData?.riderName || orderStatus?.riderName) && (
-                    <div className="bg-white border border-neutral-200 rounded-3xl p-6 md:p-8">
-                        <h3 className="text-lg font-bold text-neutral-900 uppercase tracking-wide mb-4">Your Rider</h3>
+                    <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-3xl p-6 md:p-8">
+                        <h3 className="text-lg font-bold text-neutral-900 dark:text-white uppercase tracking-wide mb-4">Your Rider</h3>
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center">
                                 <Bike size={24} className="text-yellow-500" />
                             </div>
                             <div className="flex-1">
-                                <p className="text-neutral-900 font-bold text-lg">{reOrderData?.riderName || orderStatus?.riderName}</p>
+                                <p className="text-neutral-900 dark:text-white font-bold text-lg">{reOrderData?.riderName || orderStatus?.riderName}</p>
                                 {(reOrderData?.riderPhone || orderStatus?.riderPhone) && (
                                     <a
                                         href={`tel:${reOrderData?.riderPhone || orderStatus?.riderPhone}`}
@@ -308,27 +308,27 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                 )}
 
                 {/* Dispatch Info */}
-                <div className="bg-white border border-neutral-200 rounded-3xl p-6 md:p-8">
-                     <h3 className="text-lg font-bold text-neutral-900 uppercase tracking-wide mb-6">Order Dispatch</h3>
+                 <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-3xl p-6 md:p-8">
+                     <h3 className="text-lg font-bold text-neutral-900 dark:text-white uppercase tracking-wide mb-6">Order Dispatch</h3>
                      <div className="space-y-6">
                         {isPickup ? (
                           <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-yellow-500 shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#0a0a0a] flex items-center justify-center text-yellow-500 shrink-0">
                                 <ShoppingBag size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Pickup From</p>
-                                <p className="text-neutral-900 font-medium text-sm">{orderAddress || 'Your selected outlet'}</p>
+                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 font-black uppercase tracking-widest mb-1">Pickup From</p>
+                                <p className="text-neutral-900 dark:text-white font-medium text-sm">{orderAddress || 'Your selected outlet'}</p>
                             </div>
                           </div>
                         ) : (
                           <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-yellow-500 shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#0a0a0a] flex items-center justify-center text-yellow-500 shrink-0">
                                 <MapPin size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Destination</p>
-                                <p className="text-neutral-900 font-medium text-sm">{reOrderData?.deliveryAddress || orderAddress || '—'}</p>
+                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 font-black uppercase tracking-widest mb-1">Destination</p>
+                                <p className="text-neutral-900 dark:text-white font-medium text-sm">{reOrderData?.deliveryAddress || orderAddress || '—'}</p>
                             </div>
                           </div>
                         )}
@@ -336,7 +336,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                 </div>
 
                 <div className="flex gap-4">
-                    <button onClick={onClose} className="flex-1 bg-white hover:bg-neutral-200 text-black py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors">
+                    <button onClick={onClose} className="flex-1 bg-white dark:bg-[#121212] hover:bg-neutral-200 dark:hover:bg-white/10 text-black dark:text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-colors border border-neutral-200 dark:border-white/10">
                         Return Home
                     </button>
                     <button
@@ -353,9 +353,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
             {/* RIGHT: Receipt */}
             <div className="lg:col-span-2">
-                <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden flex flex-col h-full">
-                    <div className="p-6 border-b border-neutral-200 bg-neutral-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-neutral-900">
+                <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/10 rounded-3xl overflow-hidden flex flex-col h-full">
+                    <div className="p-6 border-b border-neutral-200 dark:border-white/10 bg-neutral-100 dark:bg-[#0a0a0a] flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-neutral-900 dark:text-white">
                              <Receipt size={20} className="text-yellow-500" />
                              <span className="font-bold uppercase tracking-widest text-xs">Tax Invoice</span>
                          </div>
@@ -366,10 +366,10 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                             <div className="space-y-4 animate-pulse">
                                 {[1,2,3].map(i => (
                                     <div key={i} className="flex gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-neutral-200 shrink-0" />
+                                        <div className="w-10 h-10 rounded-lg bg-neutral-200 dark:bg-neutral-800 shrink-0" />
                                         <div className="flex-1 space-y-2 py-1">
-                                            <div className="h-2 bg-neutral-200 rounded w-3/4" />
-                                            <div className="h-2 bg-neutral-200 rounded w-1/2" />
+                                            <div className="h-2 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
+                                            <div className="h-2 bg-neutral-200 dark:bg-neutral-800 rounded w-1/2" />
                                         </div>
                                     </div>
                                 ))}
@@ -382,22 +382,22 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                                         : [];
                                     return (
                                         <div key={index} className="flex gap-4">
-                                            <div className="w-10 h-10 rounded-lg bg-neutral-100 overflow-hidden shrink-0 relative border border-neutral-200">
+                                            <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-[#0a0a0a] overflow-hidden shrink-0 relative border border-neutral-200 dark:border-white/10">
                                                 {item.ItemImage ? (
                                                     <Image src={item.ItemImage} alt={item.ProductName ?? ''} fill sizes="40px" className="object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full bg-neutral-200" />
+                                                    <div className="w-full h-full bg-neutral-200 dark:bg-neutral-800" />
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-neutral-900 truncate uppercase italic">
+                                                <p className="text-xs font-bold text-neutral-900 dark:text-white truncate uppercase italic">
                                                     <span className="text-yellow-500 mr-1">{item.Quantity}x</span> {item.ProductName}
                                                 </p>
                                                 {opts.length > 0 && (
-                                                    <p className="text-[9px] text-neutral-500 uppercase font-black">{opts.join(', ')}</p>
+                                                    <p className="text-[9px] text-neutral-500 dark:text-neutral-400 uppercase font-black">{opts.join(', ')}</p>
                                                 )}
                                             </div>
-                                            <span className="text-xs font-bold text-neutral-900 whitespace-nowrap">Rs. {item.TotalProductPrice}</span>
+                                            <span className="text-xs font-bold text-neutral-900 dark:text-white whitespace-nowrap">Rs. {item.TotalProductPrice}</span>
                                         </div>
                                     );
                                 })}
@@ -413,8 +413,8 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                             (s: number, i: any) => s + parseFloat(i.discountGiven || '0'), 0
                         );
                         return (
-                        <div className="p-6 bg-neutral-50 border-t border-neutral-200 space-y-2">
-                            <div className="flex justify-between text-neutral-500 text-xs">
+                        <div className="p-6 bg-neutral-50 dark:bg-white/5 border-t border-neutral-200 dark:border-white/10 space-y-2">
+                            <div className="flex justify-between text-neutral-500 dark:text-neutral-400 text-xs">
                                 <span>Items Total</span>
                                 <span>Rs. {itemsTotal}</span>
                             </div>
@@ -425,32 +425,32 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
                                 </div>
                             )}
                             {reOrderData.taxAmount > 0 && (
-                                <div className="flex justify-between text-neutral-600 text-[10px]">
+                                <div className="flex justify-between text-neutral-600 dark:text-neutral-400 text-[10px]">
                                     <span>Incl. GST{reOrderData.tax ? ` (${reOrderData.tax}%)` : ''}</span>
                                     <span>Rs. {reOrderData.taxAmount}</span>
                                 </div>
                             )}
                             {reOrderData.deliveryFee > 0 && (
-                                <div className="flex justify-between text-neutral-500 text-xs">
+                                <div className="flex justify-between text-neutral-500 dark:text-neutral-400 text-xs">
                                     <span>Delivery Fee</span>
                                     <span>Rs. {reOrderData.deliveryFee}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between text-neutral-500 text-xs">
+                            <div className="flex justify-between text-neutral-500 dark:text-neutral-400 text-xs">
                                 <span>Payment</span>
-                                <span className="text-neutral-700 font-bold">{reOrderData.paymentType}</span>
+                                <span className="text-neutral-700 dark:text-neutral-200 font-bold">{reOrderData.paymentType}</span>
                             </div>
-                            <div className="flex justify-between items-end pt-2 border-t border-neutral-200">
-                                <span className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
+                            <div className="flex justify-between items-end pt-2 border-t border-neutral-200 dark:border-white/10">
+                                <span className="text-neutral-400 dark:text-neutral-500 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
                                 <span className="text-xl font-black text-yellow-500">Rs. {reOrderData.orderAmount}</span>
                             </div>
                         </div>
                         );
                     })()}
                     {!reOrderData && (
-                        <div className="p-6 bg-neutral-50 border-t border-neutral-200">
+                        <div className="p-6 bg-neutral-50 dark:bg-white/5 border-t border-neutral-200 dark:border-white/10">
                             <div className="flex justify-between items-end">
-                                <span className="text-neutral-400 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
+                                <span className="text-neutral-400 dark:text-neutral-500 font-black uppercase text-[10px] tracking-[0.2em]">Grand Total</span>
                                 <span className="text-xl font-black text-yellow-500">—</span>
                             </div>
                         </div>
