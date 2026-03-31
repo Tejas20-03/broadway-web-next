@@ -201,6 +201,15 @@ export default function Home() {
     setSelectedProductMode('full');
   }, []);
 
+  // Prefetch product detail routes so title click feels instant
+  useEffect(() => {
+    if (!selectedProduct) return;
+    router.prefetch(`/product/${encodeURIComponent(selectedProduct.id)}`);
+    if (selectedProductMode === 'simple') {
+      router.prefetch(`/simple-product/${encodeURIComponent(selectedProduct.id)}`);
+    }
+  }, [selectedProduct?.id, selectedProductMode, router]);
+
   const scrollToCategory = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (el) {
@@ -272,6 +281,10 @@ export default function Home() {
           isOpen={!!selectedProduct}
           onClose={handleCloseProduct}
           onAddToCart={addToCart}
+          onOpenProductPage={(id: string) => {
+            handleCloseProduct();
+            router.push(`/product/${encodeURIComponent(id)}`);
+          }}
         />
       )}
 

@@ -12,9 +12,10 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (item: any) => void;
+  onOpenProductPage: (productId: string) => void;
 }
 
-export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart }) => {
+export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onOpenProductPage }) => {
   const { location } = useLocation();
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
@@ -72,6 +73,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   );
 
   if (!isOpen || !resolvedProduct) return null;
+
+  const handleOpenProductPage = () => {
+    if (!resolvedProduct) return;
+    onClose();
+    onOpenProductPage(resolvedProduct.id);
+  };
 
   const scrollToGroup = (groupId: string) => {
     const container = scrollContainerRef.current;
@@ -215,7 +222,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
               {sizeLabel && <span className="bg-yellow-500 text-neutral-900 dark:text-white text-xs font-black px-2 py-1 rounded uppercase tracking-wider">{sizeLabel}</span>}
               {firstGroupFirstOption && <span className="bg-white/20 text-neutral-900 dark:text-white backdrop-blur text-xs font-bold px-2 py-1 rounded">{firstGroupFirstOption}</span>}
             </div>
-            <h2 className="text-4xl font-black text-neutral-900 dark:text-white uppercase leading-none mb-1 drop-shadow-xl">{resolvedProduct.name}</h2>
+            <h2
+              onClick={handleOpenProductPage}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenProductPage(); } }}
+              role="button"
+              tabIndex={0}
+              className="text-4xl font-black text-neutral-900 dark:text-white uppercase leading-none mb-1 drop-shadow-xl cursor-pointer transition-colors hover:text-yellow-500 dark:hover:text-yellow-400  focus-visible:text-yellow-500 dark:focus-visible:text-yellow-400 outline-none"
+            >
+              {resolvedProduct.name}
+            </h2>
             <p className="text-neutral-600 dark:text-neutral-400 text-sm font-medium line-clamp-2 drop-shadow-md">{resolvedProduct.description || 'The perfect cheesy delight loaded with toppings.'}</p>
           </div>
         </div>
@@ -225,7 +240,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
           <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
 
             {/* Mobile image */}
-            <div className="md:hidden relative w-full h-72 bg-neutral-100 dark:bg-[#121212] shrink-0">
+            <div className="md:hidden relative w-full h-72 bg-neutral-100 dark:bg-[#121212] shrink-0 group">
               <Image src={leftImage} alt={resolvedProduct.name} fill sizes="100vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-white/85 dark:from-[#0a0a0a] via-transparent to-black/20 dark:to-black/30"></div>
               <div className="absolute bottom-4 left-4 right-4">
@@ -233,7 +248,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
                   {sizeLabel && <span className="bg-yellow-500 text-neutral-900 dark:text-white text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">{sizeLabel}</span>}
                   {firstGroupFirstOption && <span className="bg-white/20 text-neutral-900 dark:text-white backdrop-blur text-[10px] font-bold px-2 py-1 rounded">{firstGroupFirstOption}</span>}
                 </div>
-                <h2 className="text-2xl font-black text-neutral-900 dark:text-white uppercase leading-none mb-1 drop-shadow-xl">{resolvedProduct.name}</h2>
+                <h2
+                  onClick={handleOpenProductPage}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenProductPage(); } }}
+                  role="button"
+                  tabIndex={0}
+                  className="text-2xl font-black text-neutral-900 dark:text-white uppercase leading-none mb-1 drop-shadow-xl cursor-pointer transition-colors hover:text-yellow-500 dark:hover:text-yellow-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-400 focus-visible:text-yellow-500 dark:focus-visible:text-yellow-400 outline-none"
+                >
+                  {resolvedProduct.name}
+                </h2>
                 <p className="text-neutral-600 dark:text-neutral-400 text-xs font-medium line-clamp-2 drop-shadow-md">{resolvedProduct.description}</p>
               </div>
             </div>

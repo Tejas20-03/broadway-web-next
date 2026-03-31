@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { X, Flame, Timer, Zap, ShoppingBag, ArrowRight, TrendingUp, Star, Users, Bell, ShieldCheck } from 'lucide-react';
 import { Product } from '@/types';
 import { useGetHotDealsQuery } from '@/store/apiSlice';
@@ -24,6 +25,7 @@ const RECENT_CLAIMS = [
 ];
 
 export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onAddToCart }) => {
+  const router = useRouter();
   const { location } = useLocation();
   const city = location?.city || 'Karachi';
   const { data: baseDeals = [] } = useGetHotDealsQuery(city, { skip: !isOpen });
@@ -31,6 +33,17 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
   const [deals, setDeals] = useState<HotDeal[]>([]);
   const [claimIndex, setClaimIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    router.prefetch(`/product/${encodeURIComponent(selectedProduct.id)}`);
+  }, [selectedProduct?.id, router]);
+
+  const handleOpenProductPage = (productId: string) => {
+    setSelectedProduct(null);
+    onClose();
+    router.push(`/product/${encodeURIComponent(productId)}`);
+  };
 
   // Sync deals from RTK Query data when it arrives
   useEffect(() => {
@@ -254,6 +267,7 @@ export const HotDealsPage: React.FC<HotDealsPageProps> = ({ isOpen, onClose, onA
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={onAddToCart}
+        onOpenProductPage={handleOpenProductPage}
       />
     </div>
   );
