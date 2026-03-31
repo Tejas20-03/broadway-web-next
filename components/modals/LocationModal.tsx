@@ -45,6 +45,8 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+  const [mapInitialLat, setMapInitialLat] = useState(24.8607);
+  const [mapInitialLng, setMapInitialLng] = useState(67.0011);
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
   const [triggerPendingOrders] = useLazyGetPendingOrdersQuery();
   const [deleteSavedAddress] = useDeleteSavedAddressMutation();
@@ -102,7 +104,14 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
     setGeoError('');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        fetchGeoCodeArea(pos.coords.latitude, pos.coords.longitude)
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        setMapInitialLat(lat);
+        setMapInitialLng(lng);
+        setIsMapPickerOpen(true);
+
+        fetchGeoCodeArea(lat, lng)
           .then((result) => {
             applyGeoResult(result);
           })
@@ -119,20 +128,6 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       },
       { timeout: 10000 },
     );
-  };
-
-  const handleMapSelect = async (lat: number, lng: number) => {
-    setGeoLoading(true);
-    setGeoError('');
-    try {
-      const result = await fetchGeoCodeArea(lat, lng);
-      applyGeoResult(result);
-      setIsMapPickerOpen(false);
-    } catch {
-      setGeoError('Could not map this location to our service area. Please try another pin.');
-    } finally {
-      setGeoLoading(false);
-    }
   };
 
   const selectSavedAddress = (addr: SavedAddress) => {
@@ -598,7 +593,8 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose, o
       <OpenStreetMapPickerModal
         isOpen={isMapPickerOpen}
         onClose={() => setIsMapPickerOpen(false)}
-        onSelect={handleMapSelect}
+        initialLat={mapInitialLat}
+        initialLng={mapInitialLng}
       />
     </>
   );
