@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // Layout
@@ -18,6 +18,7 @@ import { ProductCard } from '../components/menu/ProductCard';
 // Modals
 import { CartDrawer } from '../components/modals/CartDrawer';
 import { ProductModal } from '../components/modals/ProductModal';
+import { SimpleProductModal } from '../components/modals/SimpleProductModal';
 import { LocationModal } from '../components/modals/LocationModal';
 import { ContactModal } from '../components/modals/ContactModal';
 import { CateringModal } from '../components/modals/CateringModal';
@@ -37,10 +38,12 @@ import { useLocation } from '../context/LocationContext';
 import { useUser } from '../context/UserContext';
 import { useAppDispatch } from '../store';
 import { uiActions } from '../store/slices/uiSlice';
-import { useGetPendingOrdersQuery } from '../store/apiSlice';
+import { useGetPendingOrdersQuery, useLazyGetProductOptionsQuery } from '../store/apiSlice';
 import type { PendingOrder } from '../services/api';
 import { useMenu } from '../hooks/useMenu';
 import { Product } from '../types';
+
+type ProductPopupMode = 'simple' | 'full';
 
 // SEO helper (client-side only)
 function updateMeta(title: string, description: string, product?: Product) {
@@ -121,7 +124,10 @@ export default function Home() {
   const dispatch = useAppDispatch();
   const [activeCategory, setActiveCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProductMode, setSelectedProductMode] = useState<ProductPopupMode>('full');
+  const [resolveOpenLoading, setResolveOpenLoading] = useState(false);
   const [trackDismissed, setTrackDismissed] = useState(false);
+  const [triggerProductOptions] = useLazyGetProductOptionsQuery();
 
   // RTK Query: auto-fetches and refetches when user logs in/out
   const { data: pendingOrders = [] } = useGetPendingOrdersQuery(
@@ -136,30 +142,11 @@ export default function Home() {
   }, [categories, activeCategory]);
 
   useEffect(() => {
-    if (isLoading || products.length === 0) return;
-    const syncFromUrl = () => {
-      const productId = new URLSearchParams(window.location.search).get('item');
-      setSelectedProduct(productId ? (products.find(p => p.id === productId) ?? null) : null);
-    };
-    syncFromUrl();
-    window.addEventListener('popstate', syncFromUrl);
-    return () => window.removeEventListener('popstate', syncFromUrl);
-  }, [products, isLoading]);
-
-  useEffect(() => {
-    if (selectedProduct) {
-      updateMeta(
-        `${selectedProduct.name} - Broadway Pizza`,
-        selectedProduct.description || `Order ${selectedProduct.name} online from Broadway Pizza.`,
-        selectedProduct,
-      );
-    } else {
-      updateMeta(
-        'Broadway Pizza - Modern Pizza Ordering',
-        'The best pizza in town. Order online for fast delivery and exclusive deals.',
-      );
-    }
-  }, [selectedProduct]);
+    updateMeta(
+      'Broadway Pizza - Modern Pizza Ordering',
+      'The best pizza in town. Order online for fast delivery and exclusive deals.',
+    );
+  }, []);
 
   useEffect(() => {
     if (isLoading || categories.length === 0) return;
@@ -177,20 +164,41 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [categories, isLoading]);
 
-  const handleOpenProduct = useCallback((product: Product) => {
-    setSelectedProduct(product);
+  const handleOpenProduct = useCallback(async (product: Product) => {
+    setResolveOpenLoading(true);
+    let mode: ProductPopupMode = 'simple';
+
     try {
-      const params = new URLSearchParams(window.location.search);
-      params.set('item', product.id);
-      window.history.pushState({ productId: product.id }, '', `${window.location.pathname}?${params}`);
-    } catch { /* no-op */ }
-  }, []);
+      const result = await triggerProductOptions(
+        { itemId: product.id, city: location.city, area: location.area },
+        true,
+      );
+
+      const data = result.data;
+      const optionGroupsCount = data?.optionGroups?.length ?? 0;
+      const sizeCount = data?.sizes?.length ?? 0;
+      const sizeOptionGroups = data?.sizeOptionGroups ?? {};
+      const hasSizeOptionGroups = Object.values(sizeOptionGroups).some((groups: any) => Array.isArray(groups) && groups.length > 0);
+
+      const hasRealOptions = optionGroupsCount > 0 || hasSizeOptionGroups || sizeCount > 1;
+      mode = hasRealOptions ? 'full' : 'simple';
+    } catch {
+      // Fallback to product payload if options API fails.
+      const hasFallbackOptions =
+        (product.optionGroups?.length ?? 0) > 0
+        || (product.sizes?.length ?? 0) > 1
+        || Object.keys(product.sizeOptionGroups ?? {}).length > 0;
+      mode = hasFallbackOptions ? 'full' : 'simple';
+    }
+
+    setSelectedProductMode(mode);
+    setSelectedProduct(product);
+    setResolveOpenLoading(false);
+  }, [triggerProductOptions, location.city, location.area]);
 
   const handleCloseProduct = useCallback(() => {
     setSelectedProduct(null);
-    try {
-      window.history.pushState({}, '', window.location.pathname);
-    } catch { /* no-op */ }
+    setSelectedProductMode('full');
   }, []);
 
   const scrollToCategory = useCallback((id: string) => {
@@ -242,12 +250,36 @@ export default function Home() {
         onOpenLogin={openLogin}
       />
 
-      <ProductModal
-        product={selectedProduct}
-        isOpen={!!selectedProduct}
-        onClose={handleCloseProduct}
-        onAddToCart={addToCart}
-      />
+      {selectedProduct && selectedProductMode === 'simple' ? (
+        <SimpleProductModal
+          product={selectedProduct}
+          isOpen={!!selectedProduct}
+          onClose={handleCloseProduct}
+          onAddToCart={addToCart}
+          onOpenProductPage={(id: string) => {
+            handleCloseProduct();
+            router.push(`/simple-product/${encodeURIComponent(id)}`);
+          }}
+          onOpenCategoryPage={(categoryId: string) => {
+            handleCloseProduct();
+            router.push(`/category/${encodeURIComponent(categoryId)}`);
+          }}
+          categoryLabel={categories.find(c => c.id === selectedProduct.category)?.label}
+        />
+      ) : (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={!!selectedProduct}
+          onClose={handleCloseProduct}
+          onAddToCart={addToCart}
+        />
+      )}
+
+      {resolveOpenLoading && (
+        <div className="fixed inset-0 z-[240] bg-black/50 backdrop-blur-sm flex items-center justify-center">
+          <Loader2 size={32} className="animate-spin text-yellow-500" />
+        </div>
+      )}
 
       <LocationModal
         isOpen={isLocationOpen}
@@ -339,13 +371,22 @@ export default function Home() {
 
                 return (
                   <section key={cat.id} id={cat.id} className="scroll-mt-48 mb-16">
-                    <div className="flex items-end gap-4 my-[10px] border-b border-neutral-200 dark:border-white/5 pb-[10px] px-2 md:px-0">
-                      <h2 className="text-2xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter uppercase">
-                        {cat.label}
-                      </h2>
-                      <span className="text-neutral-500 text-sm md:text-base font-medium pb-1 md:pb-1.5">
-                        {sectionProducts.length} Items
-                      </span>
+                    <div className="flex items-end justify-between my-[10px] border-b border-neutral-200 dark:border-white/5 pb-[10px] px-2 md:px-0">
+                      <div className="flex items-end gap-4">
+                        <h2 className="text-2xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter uppercase">
+                          {cat.label}
+                        </h2>
+                        <span className="text-neutral-500 text-sm md:text-base font-medium pb-1 md:pb-1.5">
+                          {sectionProducts.length} Items
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/category/${encodeURIComponent(cat.id)}`)}
+                        className="text-yellow-500 hover:text-yellow-400 text-xs md:text-sm font-black uppercase tracking-widest flex items-center gap-1 transition-all group pb-1 md:pb-1.5"
+                      >
+                        View All
+                        <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      </button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                       {sectionProducts.map(product => (

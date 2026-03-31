@@ -29,6 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
   const originalDisplayPrice = isPickup
     ? undefined  // no strikethrough for pickup — takeaway is always the cheaper price
     : (product.originalPrice && product.originalPrice > displayPrice ? product.originalPrice : undefined);
+  const showPrice = displayPrice > 0;
 
   const discountPercentage = originalDisplayPrice
     ? Math.round(((originalDisplayPrice - displayPrice) / originalDisplayPrice) * 100)
@@ -101,19 +102,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
         </p>
 
         <div className="mt-auto pt-3 flex items-end justify-between">
+          {showPrice ? (
             <div className="flex flex-col leading-none">
-                {originalDisplayPrice && (
-                    <span className="text-[8px] md:text-[10px] text-neutral-600 font-bold line-through mb-0.5">
-                        Rs. {originalDisplayPrice}
-                    </span>
-                )}
-                <div className="flex items-baseline gap-0.5">
-                    <span className="text-yellow-500 text-[9px] md:text-xs font-bold">Rs.</span>
-                    <span className="text-neutral-900 dark:text-white text-lg md:text-2xl font-black tracking-tighter">
-                        {displayPrice}
-                    </span>
-                </div>
+              {originalDisplayPrice && (
+                <span className="text-[8px] md:text-[10px] text-neutral-600 font-bold line-through mb-0.5">
+                  Rs. {originalDisplayPrice}
+                </span>
+              )}
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-yellow-500 text-[9px] md:text-xs font-bold">Rs.</span>
+                <span className="text-neutral-900 dark:text-white text-lg md:text-2xl font-black tracking-tighter">
+                  {displayPrice}
+                </span>
+              </div>
             </div>
+          ) : <div />}
                 <button className="w-8 h-8 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-[#1a1a1a] dark:to-[#252525] text-neutral-900 dark:text-white border border-neutral-200 dark:border-white/10 flex items-center justify-center transition-all hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]">
                 <Plus size={16} strokeWidth={3} className="md:w-5 md:h-5" />
             </button>

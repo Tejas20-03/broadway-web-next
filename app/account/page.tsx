@@ -1,13 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { AccountPage } from '@/components/views/AccountPage';
+import { MyAccountPage } from '@/components/views/MyAccountPage';
 
 export default function AccountRoute() {
   const router = useRouter();
 
   return (
-    <AccountPage
+    <MyAccountPage
       isOpen={true}
       onClose={() => router.push('/')}
       onViewOrder={(_, encOrderId) => router.push(`/order/${encOrderId}`)}

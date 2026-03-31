@@ -302,6 +302,7 @@ export const broadwayApi = createApi({
 export const {
   useGetMenuQuery,
   useGetProductOptionsQuery,
+  useLazyGetProductOptionsQuery,
   useGetCitiesQuery,
   useGetAreasQuery,
   useGetOutletsQuery,

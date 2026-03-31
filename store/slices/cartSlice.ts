@@ -7,8 +7,11 @@ export interface AddToCartPayload {
   image: string;
   price: number;
   quantity: number;
+  category?: string;
   selectedSize?: ProductSize;
   selectedOptions?: { [groupId: string]: ProductOption[] };
+  selectedOptionGroupNames?: { [groupId: string]: string };
+  minimumDelivery?: number;
 }
 
 interface CartState {
