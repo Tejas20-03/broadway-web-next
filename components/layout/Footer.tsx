@@ -69,10 +69,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenContact, onOpenFeedback })
             <div>
                 <h3 className="text-sm font-black text-neutral-900 dark:text-white uppercase tracking-widest mb-6">Company</h3>
                 <ul className="space-y-3">
-                    <li><button className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">About Us</button></li>
-                    <li><button className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Our Story</button></li>
-                    <li><button className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Careers</button></li>
+                <li><Link href="/" className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Home</Link></li>
                     <li><Link href="/blog" className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Blog</Link></li>
+                <li><Link href="/hot-deals" className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Hot Deals</Link></li>
+                <li><Link href="/account" className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">My Account</Link></li>
                 </ul>
             </div>
             
@@ -82,7 +82,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenContact, onOpenFeedback })
                     <li><button onClick={onOpenContact} className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Contact Us</button></li>
                     <li><button onClick={onOpenFeedback} className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Feedback</button></li>
                     <li><Link href="/locations" className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Our Locations</Link></li>
-                    <li><button className="text-sm text-neutral-500 hover:text-yellow-500 transition-colors">Privacy Policy</button></li>
                 </ul>
             </div>
 

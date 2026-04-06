@@ -25,6 +25,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const groupRefs = useRef<Record<string, HTMLElement | null>>({});
   const addToCartRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
   // RTK Query — cached, no duplicate requests for the same product
   const { data: optionData, isFetching: isLoadingOptions } = useGetProductOptionsQuery(
@@ -71,6 +72,54 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
     () => activeGroups.filter(group => group.minSelection > 0),
     [activeGroups],
   );
+
+  useEffect(() => {
+    if (!isOpen || !resolvedProduct) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!modalRef.current) return;
+
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, resolvedProduct, onClose]);
 
   if (!isOpen || !resolvedProduct) return null;
 
@@ -204,7 +253,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onC
       {/* Backdrop */}
       <div className="absolute inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-xl transition-opacity animate-in fade-in" onClick={onClose}></div>
       
-      <div className="relative bg-white dark:bg-[#0a0a0a] w-full h-[100dvh] sm:h-[85vh] sm:max-w-6xl sm:rounded-[2.5rem] flex flex-col md:flex-row shadow-2xl animate-slide-in border-none sm:border sm:border-neutral-200 dark:border-white/10 overflow-hidden">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Product details"
+        tabIndex={-1}
+        className="relative bg-white dark:bg-[#0a0a0a] w-full h-[100dvh] sm:h-[85vh] sm:max-w-6xl sm:rounded-[2.5rem] flex flex-col md:flex-row shadow-2xl animate-slide-in border-none sm:border sm:border-neutral-200 dark:border-white/10 overflow-hidden focus:outline-none"
+      >
         
         <button onClick={onClose} className="md:hidden absolute top-4 left-4 z-[210] bg-white/80 dark:bg-black/40 hover:bg-white dark:hover:bg-black/60 backdrop-blur-md text-neutral-900 dark:text-white p-3 rounded-full border border-neutral-200 dark:border-white/10 shadow-lg">
           <ArrowLeft size={24} />

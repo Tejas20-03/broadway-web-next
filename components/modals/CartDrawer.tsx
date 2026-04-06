@@ -34,6 +34,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
   const [appliedVoucherAmount, setAppliedVoucherAmount] = useState(0);
   const [voucherError, setVoucherError] = useState('');
+  const drawerRef = React.useRef<HTMLDivElement>(null);
 
   // Reset voucher state whenever the cart becomes empty (e.g. after order placed)
   useEffect(() => {
@@ -136,6 +137,52 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     });
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    drawerRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !drawerRef.current) return;
+
+      const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -147,7 +194,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       />
 
       {/* Drawer - Higher Z-index than Modal */}
-      <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-white dark:bg-[#0a0a0a] border-l border-neutral-200 dark:border-white/10 z-[300] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-slide-in">
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Shopping cart"
+        tabIndex={-1}
+        className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-white dark:bg-[#0a0a0a] border-l border-neutral-200 dark:border-white/10 z-[300] shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-slide-in focus:outline-none"
+      >
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-neutral-200 dark:border-white/10 flex items-center justify-between bg-neutral-100 dark:bg-[#121212]">

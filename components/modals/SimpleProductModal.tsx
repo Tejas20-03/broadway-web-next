@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, Star, Sparkles, ArrowLeft, Users } from 'lucide-react';
 import { Product } from '@/types';
@@ -25,10 +25,59 @@ export const SimpleProductModal: React.FC<SimpleProductModalProps> = ({
   categoryLabel,
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (product) setQuantity(1);
   }, [product]);
+
+  useEffect(() => {
+    if (!isOpen || !product) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!modalRef.current) return;
+
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, product, onClose]);
 
   if (!product) return null;
 
@@ -79,7 +128,12 @@ export const SimpleProductModal: React.FC<SimpleProductModalProps> = ({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 40 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative bg-[#0a0a0a] w-full h-full sm:h-auto sm:max-w-xl sm:rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col"
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Product quick view"
+            tabIndex={-1}
+            className="relative bg-[#0a0a0a] w-full h-full sm:h-auto sm:max-w-xl sm:rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col focus:outline-none"
           >
         <div className="sm:hidden absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
           <motion.button whileTap={{ scale: 0.9 }} onClick={onClose} className="bg-black/40 backdrop-blur-md text-white p-3 rounded-full border border-white/10 shadow-lg">

@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { X, MapPin, Search, Compass, ArrowUpRight, Map as MapIcon, Loader2, Building2, Info } from 'lucide-react';
 import { useOutlets } from '@/hooks/useAreas';
@@ -14,6 +14,10 @@ interface LocationsPageProps {
 export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const cityTabsRef = useRef<HTMLDivElement>(null);
+  const isDraggingCityTabsRef = useRef(false);
+  const cityTabsDragStartXRef = useRef(0);
+  const cityTabsStartScrollLeftRef = useRef(0);
   const { data: cities = [], isLoading: citiesLoading } = useGetCitiesQuery(undefined, { skip: !isOpen });
 
   useEffect(() => {
@@ -33,6 +37,37 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
   }, [outlets, searchTerm]);
 
   if (!isOpen) return null;
+
+  const handleCityTabsWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+    const container = cityTabsRef.current;
+    if (!container) return;
+
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      container.scrollLeft += event.deltaY;
+      event.preventDefault();
+    }
+  };
+
+  const handleCityTabsMouseDown: React.MouseEventHandler<HTMLDivElement> = (event) => {
+    const container = cityTabsRef.current;
+    if (!container) return;
+
+    isDraggingCityTabsRef.current = true;
+    cityTabsDragStartXRef.current = event.clientX;
+    cityTabsStartScrollLeftRef.current = container.scrollLeft;
+  };
+
+  const handleCityTabsMouseMove: React.MouseEventHandler<HTMLDivElement> = (event) => {
+    const container = cityTabsRef.current;
+    if (!container || !isDraggingCityTabsRef.current) return;
+
+    const deltaX = event.clientX - cityTabsDragStartXRef.current;
+    container.scrollLeft = cityTabsStartScrollLeftRef.current - deltaX;
+  };
+
+  const stopCityTabsDrag = () => {
+    isDraggingCityTabsRef.current = false;
+  };
 
   return (
     <div className="fixed inset-0 z-[110] bg-gray-50 dark:bg-[#050505] flex flex-col animate-in slide-in-from-right duration-500 overflow-hidden">
@@ -56,7 +91,15 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
         {/* Filters */}
         <div className="max-w-7xl mx-auto px-6 pb-6 space-y-5">
         {/* City Cards */}
-        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+        <div
+          ref={cityTabsRef}
+          onWheel={handleCityTabsWheel}
+          onMouseDown={handleCityTabsMouseDown}
+          onMouseMove={handleCityTabsMouseMove}
+          onMouseUp={stopCityTabsDrag}
+          onMouseLeave={stopCityTabsDrag}
+          className="flex flex-nowrap gap-3 overflow-x-auto overflow-y-hidden whitespace-nowrap no-scrollbar px-1 py-2 [touch-action:pan-x] md:cursor-grab select-none"
+        >
           {citiesLoading
             ? Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="shrink-0 w-28 h-16 rounded-2xl bg-white/5 animate-pulse" />
@@ -65,16 +108,16 @@ export const LocationsPage: React.FC<LocationsPageProps> = ({ isOpen, onClose })
                 <button
                   key={city.name}
                   onClick={() => setSelectedCity(city.name)}
-                  className={`relative shrink-0 w-28 h-16 rounded-2xl overflow-hidden border-2 transition-all duration-300
+                  className={`relative shrink-0 min-w-[8rem] px-2 h-16 rounded-2xl overflow-hidden border-2 transition-all duration-300
                     ${selectedCity === city.name
-                      ? 'border-yellow-500 shadow-lg shadow-yellow-500/20 scale-105'
-                      : 'border-white/10 opacity-60 hover:opacity-90 hover:scale-[1.02]'}`}
+                      ? 'border-yellow-500 shadow-lg shadow-yellow-500/20'
+                      : 'border-white/10 opacity-60 hover:opacity-90'}`}
                 >
                   {city.imageUrl && (
                     <Image src={city.imageUrl} alt={city.name} fill sizes="120px" className="object-cover" />
                   )}
                   <div className={`absolute inset-0 bg-gradient-to-t transition-all duration-300 ${selectedCity === city.name ? 'from-black/70 to-black/10' : 'from-black/80 to-black/40'}`} />
-                  <span className={`absolute bottom-2 left-0 right-0 text-center text-[10px] font-black uppercase tracking-widest transition-colors ${selectedCity === city.name ? 'text-yellow-400' : 'text-white'}`}>
+                  <span className={`absolute bottom-2 left-0 right-0 px-2 text-center text-[10px] font-black uppercase tracking-[0.12em] whitespace-nowrap transition-colors ${selectedCity === city.name ? 'text-yellow-400' : 'text-white'}`}>
                     {city.name}
                   </span>
                   {selectedCity === city.name && (
