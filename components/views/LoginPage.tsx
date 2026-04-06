@@ -183,7 +183,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isOpen, onClose }) => {
                         priority
                     />
                     <h2 className="text-2xl font-black text-neutral-900 dark:text-white uppercase tracking-tight text-center">
-                        Unlock Flavor
+                        Sign In To Continue
                     </h2>
                     <p className="text-neutral-500 text-xs font-medium text-center mt-2 max-w-[280px]">
                         Returning users can continue with phone only. New users should add name and email.
