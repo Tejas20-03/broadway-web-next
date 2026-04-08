@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minus, Plus, ShoppingBag, Star, Sparkles, ArrowLeft, Users } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, Star, Sparkles, ArrowLeft, Users, ChevronRight } from 'lucide-react';
 import { Product } from '@/types';
 
 interface SimpleProductModalProps {
@@ -259,7 +259,7 @@ export const SimpleProductModal: React.FC<SimpleProductModalProps> = ({
               <div className="bg-black/10 p-3 rounded-2xl group-hover:bg-black/20 transition-colors">
                 <ShoppingBag size={24} strokeWidth={3} />
               </div>
-              <span className="tracking-tighter">ADD TO CART</span>
+              <span className="flex items-center gap-1 md:gap-2">ADD <ChevronRight size={18} className="md:w-5 md:h-5" strokeWidth={3} /></span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm opacity-60 font-bold">Rs.</span>
