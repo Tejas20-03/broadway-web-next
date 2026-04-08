@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, MapPin, Clock, CreditCard, Banknote, User, Phone, Mail, ChevronRight, ShieldCheck, Truck, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import Script from 'next/script';
+import { ArrowLeft, MapPin, CreditCard, Banknote, User, Phone, Mail, ChevronRight, ShieldCheck, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { CartItem } from '@/types';
 import { useUser } from '@/context/UserContext';
 import { useLocation } from '@/context/LocationContext';
 import { usePlaceOrderMutation } from '@/store/apiSlice';
 import { useAppSelector } from '@/store';
+import type { OrderPayload } from '@/services/api';
 
 interface CheckoutPageProps {
   isOpen: boolean;
@@ -19,12 +21,35 @@ interface CheckoutPageProps {
   onPlaceOrder: (orderAddress?: string, orderId?: string, encOrderId?: string) => void;
 }
 
+type XpayInstance = {
+    element: (selector: string, options: Record<string, unknown>) => void;
+    confirmPayment: (
+        method: string,
+        clientSecret: string,
+        customer: Record<string, unknown>,
+        encryptionKey: string,
+    ) => Promise<{ error?: string; message?: string; success?: boolean; status?: string }>;
+};
+
+type XpayConfirmResult = {
+    error?: string;
+    message?: string;
+    success?: boolean;
+    status?: string;
+};
+
+declare global {
+    interface Window {
+        Xpay?: new (publishableKey: string, accountId: string, hmacSecret: string) => XpayInstance;
+    }
+}
+
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cartItems, subtotal, discountAmount = 0, voucher = '', onPlaceOrder }) => {
   const { user } = useUser();
   const { location } = useLocation();
   const guestPhone = useAppSelector(state => state.user.guestPhone);
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
+    const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card' | 'xpay'>('cod');
   const [deliveryTime, setDeliveryTime] = useState<'asap' | 'schedule'>('asap');
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? guestPhone ?? '');
@@ -33,7 +58,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
   const [landmark, setLandmark] = useState('');
   const [remarks, setRemarks] = useState('');
   const [orderResult, setOrderResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [isXpayScriptLoaded, setIsXpayScriptLoaded] = useState(false);
+    const [isXpaySubmitting, setIsXpaySubmitting] = useState(false);
+        const [isXpayElementReady, setIsXpayElementReady] = useState(false);
+    const [xpayError, setXpayError] = useState('');
+    const [xpay, setXpay] = useState<XpayInstance | null>(null);
+        const [isXpayModalOpen, setIsXpayModalOpen] = useState(false);
   const [submitOrder, { isLoading: isSubmitting }] = usePlaceOrderMutation();
+
+    const xpayPublishableKey = process.env.NEXT_PUBLIC_XPAY_PUBLISHABLE_KEY ?? '';
+    const xpayAccountId = process.env.NEXT_PUBLIC_XPAY_ACCOUNT_ID ?? '';
+    const xpayHmacSecret = process.env.NEXT_PUBLIC_XPAY_HMAC_SECRET ?? '';
+    const isXpayConfigured = Boolean(xpayPublishableKey && xpayAccountId && xpayHmacSecret);
 
   // Reset transactional fields each time the checkout page opens (matching Cordova:
   // form fields are freshly rendered per order; name/phone/email come from profile).
@@ -45,6 +81,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
       setOrderResult(null);
       setPaymentMethod('cod');
       setDeliveryTime('asap');
+    setXpayError('');
+    setXpay(null);
+        setIsXpayElementReady(false);
+        setIsXpayModalOpen(false);
       // Re-sync contact fields from user profile in case they changed
       setName(user?.name ?? '');
       setPhone(user?.phone ?? guestPhone ?? '');
@@ -63,7 +103,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
   const taxRate = location.deliveryTax >= 1 ? location.deliveryTax / 100 : location.deliveryTax;
   // Rounded values for clean UI display
   const taxBreakdown = Math.round(effectiveSubtotal * taxRate);
-  const preTaxSubtotal = effectiveSubtotal - taxBreakdown;
   const total = effectiveSubtotal + deliveryFee;
   // Unrounded values for API payload (matching Cordova: taxToDed = totalPrice * gst/100, subtotal = totalPrice - taxToDed)
   const apiTaxAmount = effectiveSubtotal * taxRate;
@@ -73,8 +112,118 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
     ? [location.area, location.city].filter(Boolean).join(', ')
     : location.outlet || 'Pickup';
 
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.Xpay) {
+            setIsXpayScriptLoaded(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (paymentMethod !== 'xpay' || !isXpayModalOpen) return;
+        setXpayError('');
+        setIsXpayElementReady(false);
+
+        if (!isXpayScriptLoaded) {
+            setXpayError('Please wait while the payment form loads.');
+            return;
+        }
+        if (!window.Xpay) {
+            setXpayError('Payment form is currently unavailable. Please refresh and try again.');
+            return;
+        }
+        if (!isXpayConfigured) {
+            setXpayError('Payment form is currently unavailable. Please try another method.');
+            return;
+        }
+        const formHost = document.querySelector('#xpay-form-popup') as HTMLElement | null;
+        if (!formHost) return;
+        if (xpay && formHost.childElementCount > 0) {
+            setXpayError('');
+            setIsXpayElementReady(true);
+            return;
+        }
+        formHost.innerHTML = '';
+
+        const instance = new window.Xpay(xpayPublishableKey, xpayAccountId, xpayHmacSecret);
+        instance.element('#xpay-form-popup', {
+            override: true,
+            fields: {
+                creditCard: {
+                    placeholder: '1234 1234 1234 1234',
+                    label: 'Card Number',
+                },
+                exp: {
+                    placeholder: 'MM/YY',
+                },
+            },
+            style: {
+                '.input': {},
+                '.invalid': {},
+                '.label': {},
+            },
+        });
+
+        setXpay(instance);
+        setXpayError('');
+        setIsXpayElementReady(true);
+    }, [paymentMethod, isXpayModalOpen, isXpayScriptLoaded, isXpayConfigured, xpayPublishableKey, xpayAccountId, xpayHmacSecret, xpay]);
+
+    const placeOrderAfterPayment = async (payload: OrderPayload, fullAddress: string, skipGatewayRedirect = false) => {
+        const result = await submitOrder(payload).unwrap();
+        if (result.success) {
+            if (!skipGatewayRedirect && result.paymentUrl) {
+                window.location.href = result.paymentUrl;
+                return;
+            }
+            setOrderResult({ success: true, message: `Order placed! ID: ${result.orderId ?? 'N/A'}` });
+            setTimeout(() => onPlaceOrder(fullAddress, result.orderId, result.encOrderId), 2000);
+            return;
+        }
+        setOrderResult({ success: false, message: result.message ?? 'Order failed. Please try again.' });
+    };
+
+    const isXpayPaymentSuccessful = (result: XpayConfirmResult | null | undefined): boolean => {
+        if (!result || result.error) return false;
+
+        if (result.success === true) return true;
+
+        const status = String(result.status ?? '').toLowerCase();
+        if (status.includes('success') || status.includes('succeed') || status.includes('paid')) return true;
+
+        const msg = String(result.message ?? '').toLowerCase();
+        return msg.includes('success') || msg.includes('approved') || msg.includes('paid');
+    };
+
+    const confirmXpayWithTimeout = async (
+        instance: XpayInstance,
+        clientSecret: string,
+        encryptionKey: string,
+    ): Promise<XpayConfirmResult> => {
+        const timeoutPromise = new Promise<XpayConfirmResult>((_, reject) => {
+            setTimeout(() => reject(new Error('XPay confirmation timed out. Please try again.')), 90000);
+        });
+
+        const confirmPromise = instance.confirmPayment(
+            'card',
+            clientSecret,
+            { name, email, phone },
+            encryptionKey,
+        );
+
+        return Promise.race([confirmPromise, timeoutPromise]);
+    };
+
+    const openXpayPopup = () => {
+        setPaymentMethod('xpay');
+        setOrderResult(null);
+        setIsXpayModalOpen(true);
+    };
+
   const handleConfirmOrder = async () => {
-    if (!name || !phone) return;
+        if (!name.trim() || !phone.trim()) {
+            setOrderResult({ success: false, message: 'Please enter your full name and phone number before payment.' });
+            return;
+        }
     setOrderResult(null);
     // Build orderdata matching Cordova's cart.products structure exactly.
     // Key corrections vs previous version:
@@ -110,23 +259,23 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
         discountGiven: item.discountGiven ?? 0,
       };
     });
-    try {
-      // Build payload matching Cordova exactly — field presence differs by order type.
-      // Delivery (area-based): Area + cityname + customeraddress + customerEmail + Landmark — NO Outlet
-      // Pickup: Outlet only — NO Area/cityname/customeraddress
-      const isPickupOrder = location.orderType === 'pickup';
+        try {
+            const isPickupOrder = location.orderType === 'pickup';
+            const locationFields = isPickupOrder
+                ? { Outlet: location.outlet }
+                : {
+                        Area: location.area,
+                        cityname: location.city,
+                        customeraddress: address,
+                        customerEmail: email,
+                        Landmark: landmark,
+                    };
 
-      const locationFields = isPickupOrder
-        ? { Outlet: location.outlet }
-        : {
-            Area: location.area,
-            cityname: location.city,
-            customeraddress: address,
-            customerEmail: email,
-            Landmark: landmark,
-          };
+            const fullAddress = location.orderType === 'pickup'
+                ? (location.outlet || location.area || location.city || 'Pickup')
+                : [address, landmark, location.area, location.city].filter(Boolean).join(', ');
 
-      const result = await submitOrder({
+            const payload: OrderPayload = {
         customerNumberVerification: null,  // Cordova always sends this
         fullname: name,
         phone,
@@ -134,7 +283,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
         ...locationFields,
         ordertype: isPickupOrder ? 'Pickup' : 'Delivery',
         Remarks: remarks,
-        paymenttype: paymentMethod === 'cod' ? 'Cash' : 'Card',
+                paymenttype: paymentMethod === 'cod' ? 'Cash' : 'Card',
         // Unrounded floats matching Cordova: taxToDed = totalPrice * gst/100, orderamount = totalPrice - taxToDed
         orderamount: apiOrderAmount,
         taxamount: apiTaxAmount,
@@ -149,23 +298,70 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
         platform: 'Web',
         AppVersion: 1,
         DeviceSignalID: '',
-      }).unwrap();
-      if (result.success) {
-        // Card/online payment: redirect to payment gateway (Cordova: if data.URL != "")
-        if (result.paymentUrl) {
-          window.location.href = result.paymentUrl;
-          return;
-        }
-        const fullAddress = location.orderType === 'pickup'
-          ? (location.outlet || location.area || location.city || 'Pickup')
-          : [address, landmark, location.area, location.city].filter(Boolean).join(', ');
-        setOrderResult({ success: true, message: `Order placed! ID: ${result.orderId ?? 'N/A'}` });
-        setTimeout(() => onPlaceOrder(fullAddress, result.orderId, result.encOrderId), 2000);
-      } else {
-        setOrderResult({ success: false, message: result.message ?? 'Order failed. Please try again.' });
+            };
+
+            if (paymentMethod === 'xpay') {
+                if (!isXpayModalOpen) {
+                    openXpayPopup();
+                    return;
+                }
+                if (!xpay) {
+                    setOrderResult({ success: false, message: 'XPay card form is not ready yet.' });
+                    return;
+                }
+
+                setIsXpaySubmitting(true);
+                setOrderResult(null);
+                const intentRes = await fetch('/api/xpay/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: Math.round(total),
+                        currency: 'PKR',
+                        customer: {
+                            name,
+                            phone,
+                            email,
+                        },
+                        shipping: {
+                            address1: address || landmark || location.area || location.outlet || 'N/A',
+                            city: location.city || 'Karachi',
+                            country: 'PK',
+                            province: location.city || 'Sindh',
+                            zip: '00000',
+                        },
+                        metadata: {
+                            source: 'broadway-web-next',
+                            order_type: isPickupOrder ? 'Pickup' : 'Delivery',
+                        },
+                    }),
+                });
+
+                const intentData = await intentRes.json();
+                if (!intentRes.ok || !intentData?.clientSecret || !intentData?.encryptionKey) {
+                    throw new Error(intentData?.message || 'Could not initialize XPay payment.');
+                }
+
+                const paymentResult = await confirmXpayWithTimeout(
+                  xpay,
+                  intentData.clientSecret,
+                  intentData.encryptionKey,
+                );
+                                if (!isXpayPaymentSuccessful(paymentResult)) {
+                                        throw new Error(paymentResult?.error || paymentResult?.message || 'XPay payment was not confirmed. Order was not placed.');
+                                }
+
+                await placeOrderAfterPayment(payload, fullAddress, true);
+                setIsXpayModalOpen(false);
+                return;
       }
-    } catch {
-      setOrderResult({ success: false, message: 'Order failed. Please try again.' });
+
+            await placeOrderAfterPayment(payload, fullAddress);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Order failed. Please try again.';
+            setOrderResult({ success: false, message });
+        } finally {
+            setIsXpaySubmitting(false);
     }
   };
 
@@ -275,7 +471,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                         <h2 className="text-lg md:text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-wide">Payment Choice</h2>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div 
                             onClick={() => setPaymentMethod('cod')}
                             className={`
@@ -307,7 +503,32 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
                             <h3 className={`font-bold ${paymentMethod === 'card' ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>Digital Payment</h3>
                             {paymentMethod === 'card' && <div className="absolute top-3 right-3 w-3 h-3 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>}
                         </div>
+
+                        <div
+                            onClick={openXpayPopup}
+                            className={`
+                                relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-3 group
+                                ${paymentMethod === 'xpay'
+                                    ? 'border-yellow-500 bg-yellow-500/10'
+                                    : 'border-neutral-200 dark:border-white/5 bg-neutral-100 dark:bg-[#0a0a0a] hover:border-neutral-300 dark:hover:border-white/20'}
+                            `}
+                        >
+                            <div className={`p-3 rounded-full ${paymentMethod === 'xpay' ? 'bg-yellow-500 text-black' : 'bg-neutral-200 dark:bg-[#1a1a1a] text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>
+                                <CreditCard size={24} />
+                            </div>
+                            <h3 className={`font-bold ${paymentMethod === 'xpay' ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white'}`}>XPay (Card)</h3>
+                            {paymentMethod === 'xpay' && <div className="absolute top-3 right-3 w-3 h-3 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>}
+                        </div>
                     </div>
+
+                    {paymentMethod === 'xpay' && (
+                        <div className="mt-5 rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-100 dark:bg-[#0a0a0a] p-4 space-y-3">
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                                Card entry opens automatically in a secure popup. Payment will be completed first, then your order will be placed.
+                            </p>
+                            {xpayError && <p className="text-xs text-yellow-500">{xpayError}</p>}
+                        </div>
+                    )}
                 </section>
                 {/* 4. Cooking / Special Instructions */}
                 <section className="bg-white dark:bg-[#121212] rounded-3xl p-6 md:p-8 border border-neutral-200 dark:border-white/5">
@@ -387,15 +608,65 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ isOpen, onBack, cart
 
                     <button
                         onClick={handleConfirmOrder}
-                        disabled={isSubmitting || !name || !phone}
+                        disabled={isSubmitting || isXpaySubmitting}
                         className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-black py-4 rounded-xl font-black text-lg uppercase tracking-widest shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2"
                     >
-                        {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><span>Confirm Order</span><ChevronRight size={20} strokeWidth={3} /></>}
+                                                {(isSubmitting || isXpaySubmitting)
+                                                    ? <Loader2 className="animate-spin" size={20} />
+                            : <><span>{paymentMethod === 'xpay' ? 'Open XPay Popup' : 'Confirm Order'}</span><ChevronRight size={20} strokeWidth={3} /></>}
                     </button>
                 </div>
             </div>
         </div>
       </main>
+            {paymentMethod === 'xpay' && isXpayModalOpen && (
+                <div className="fixed inset-0 z-[520] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="w-full max-w-md rounded-2xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#121212] p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-base font-bold text-neutral-900 dark:text-white uppercase tracking-wide">Enter Card Details</h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsXpayModalOpen(false)}
+                                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                <X size={18} className="text-neutral-700 dark:text-neutral-300" />
+                            </button>
+                        </div>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-3">
+                            Your card data is handled by XPay securely.
+                        </p>
+                        {xpayError && (
+                            <p className="text-xs text-yellow-500 mb-3">{xpayError}</p>
+                        )}
+                        <div id="xpay-form-popup" className="min-h-[72px] rounded-xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-[#0a0a0a] p-2" />
+                        <div className="mt-4 flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setIsXpayModalOpen(false)}
+                                className="flex-1 rounded-xl border border-neutral-200 dark:border-white/10 px-4 py-3 text-sm font-bold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmOrder}
+                                disabled={isSubmitting || isXpaySubmitting}
+                                className="flex-1 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-black px-4 py-3 text-sm font-black uppercase tracking-wide transition-colors flex items-center justify-center gap-2"
+                            >
+                                {(isSubmitting || isXpaySubmitting)
+                                    ? <Loader2 className="animate-spin" size={16} />
+                                    : <><span>Pay & Submit</span><ChevronRight size={16} strokeWidth={3} /></>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <Script
+                src="https://js.xstak.com/xpay-stage.js"
+                strategy="afterInteractive"
+                onLoad={() => setIsXpayScriptLoaded(true)}
+                onError={() => setXpayError('Could not load XPay SDK. Please refresh and try again.')}
+            />
     </div>
   );
 };
