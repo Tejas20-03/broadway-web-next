@@ -13,6 +13,7 @@ import { NavigationDrawer } from '../components/layout/NavigationDrawer';
 // Menu
 import { Hero } from '../components/menu/Hero';
 import { CategoryNav } from '../components/menu/CategoryNav';
+import { CategoryTimeBadge } from '../components/menu/CategoryTimeBadge';
 import { ProductCard } from '../components/menu/ProductCard';
 
 // Modals
@@ -386,9 +387,12 @@ export default function Home() {
                   <section key={cat.id} id={cat.id} className="scroll-mt-48 mb-16">
                     <div className="flex items-end justify-between my-[10px] border-b border-neutral-200 dark:border-white/5 pb-[10px] px-2 md:px-0">
                       <div className="flex items-end gap-4">
-                        <h2 className="text-2xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter uppercase">
-                          {cat.label}
-                        </h2>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h2 className="text-2xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter uppercase">
+                            {cat.label}
+                          </h2>
+                          <CategoryTimeBadge category={cat} />
+                        </div>
                         <span className="text-neutral-500 text-sm md:text-base font-medium pb-1 md:pb-1.5">
                           {sectionProducts.length} Items
                         </span>

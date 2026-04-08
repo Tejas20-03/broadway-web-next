@@ -46,6 +46,8 @@ export interface Product {
 export interface Category {
   id: string;
   label: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface CartItem {

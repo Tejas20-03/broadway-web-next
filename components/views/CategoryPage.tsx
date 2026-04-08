@@ -8,6 +8,7 @@ import { useLocation } from '@/context/LocationContext';
 import { useMenu } from '@/hooks/useMenu';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { useLazyGetProductOptionsQuery } from '@/store/apiSlice';
+import { CategoryTimeBadge } from '@/components/menu/CategoryTimeBadge';
 
 interface CategoryPageProps {
   isOpen: boolean;
@@ -86,9 +87,12 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({ isOpen, categoryId, 
             <ArrowLeft size={24} />
           </motion.button>
           <div className="flex flex-col min-w-0">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none truncate max-w-[48vw] sm:max-w-none">
-              {category?.label ?? 'Category'}
-            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-none truncate max-w-[48vw] sm:max-w-none">
+                {category?.label ?? 'Category'}
+              </h1>
+              <CategoryTimeBadge category={category} variant="dark" />
+            </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[8px] md:text-[10px] text-yellow-500 font-black uppercase tracking-widest">
                 {categoryProducts.length} Items
@@ -133,9 +137,12 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({ isOpen, categoryId, 
             <span className="inline-block bg-yellow-500 text-black px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
               Explore Menu
             </span>
-            <h2 className="text-4xl sm:text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.9] break-words">
-              {category?.label ?? 'Category'}
-            </h2>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <h2 className="text-4xl sm:text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.9] break-words">
+                {category?.label ?? 'Category'}
+              </h2>
+              <CategoryTimeBadge category={category} variant="dark" />
+            </div>
             <p className="text-neutral-400 max-w-xl mx-auto text-xs sm:text-sm md:text-lg font-medium leading-relaxed">
               Discover our premium selection of {(category?.label ?? 'category').toLowerCase()} items, crafted with the finest ingredients and authentic recipes.
             </p>

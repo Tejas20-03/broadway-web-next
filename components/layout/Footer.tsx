@@ -107,22 +107,21 @@ export const Footer: React.FC<FooterProps> = ({ onOpenContact, onOpenFeedback })
                 <p className="text-xs text-neutral-400 font-medium text-center md:text-left">
                     © {new Date().getFullYear()} Broadway Pizza Pakistan [J &amp; S CORPORATION]. All rights reserved.
                 </p>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                    <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wide">System Operational</span>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                  <span className="text-[10px] font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-wide">
+                    Created and managed with care by{' '}
+                    <a
+                      href="https://cloubuzz.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline decoration-yellow-500/60 underline-offset-2 hover:decoration-yellow-400 transition-colors"
+                    >
+                      Cloubuzz
+                    </a>
+                  </span>
                 </div>
             </div>
-            <p className="text-[11px] text-neutral-500 font-medium text-center">
-                Created and managed with care by{' '}
-                <a
-                    href="https://cloubuzz.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-yellow-500 hover:text-yellow-400 transition-colors font-bold"
-                >
-                    Cloubuzz
-                </a>
-            </p>
         </div>
       </div>
     </footer>

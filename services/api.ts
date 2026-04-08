@@ -293,7 +293,9 @@ export const fetchMenuData = async (
 
       mappedCategories.push({
         id: categoryId,
-        label: categoryLabel
+        label: categoryLabel,
+        startTime: cat.StartTime || cat.Start || undefined,
+        endTime: cat.EndTime || cat.End || undefined,
       });
 
       // 2. Process Products - STRICT MAPPING
